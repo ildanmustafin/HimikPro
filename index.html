@@ -44,7 +44,7 @@ font-weight:600;
 box-shadow:0 6px 15px rgba(0,0,0,0.12);
 }
 
-/* ✅ ИСПРАВЛЕНО: INPUT = КАК КНОПКА ПО ШИРИНЕ */
+/* 🔧 INPUT — УМЕНЬШЕН НА 3–5% */
 input,select{
 width:100%;
 padding:10px;
@@ -52,6 +52,7 @@ border-radius:10px;
 border:1px solid #ddd;
 margin-top:10px;
 box-sizing:border-box;
+max-width:190px;
 }
 
 .event{
@@ -67,6 +68,16 @@ align-items:center;
 margin:10px 0;
 padding:8px 0;
 border-bottom:1px solid #eee;
+}
+
+.task span{
+color:#2f2f2f; /* не выполнено — тёмно-серый */
+}
+
+/* выполнено — приглушённее */
+.task.done span{
+color:#4a4a4a;
+opacity:0.6;
 }
 
 .switch{
@@ -183,6 +194,7 @@ font-weight:600;
 let shiftStart = 0;
 let shiftEnd = 1440;
 
+/* SHIFT */
 function setShift(){
 localStorage.setItem("shift", document.getElementById("shiftSelect").value);
 init();
@@ -222,6 +234,7 @@ min = ((min % 1440)+1440)%1440;
 return fmt(Math.floor(min/60)%24, min%60);
 }
 
+/* CHEM */
 function setChem(){
 
 let t=document.getElementById("chemTime").value;
@@ -246,6 +259,7 @@ localStorage.setItem("chem",JSON.stringify(arr));
 render();
 }
 
+/* SILAN */
 function setSilan(){
 
 let t=document.getElementById("silanTime").value;
@@ -292,6 +306,7 @@ let [h,m]=t.split(":").map(Number);
 return h*60+m;
 }
 
+/* LUNCH */
 function lunch(){
 
 let ev=[];
@@ -323,6 +338,7 @@ return gaps.slice(0,2).map(x=>
 ).join("\n");
 }
 
+/* TASKS */
 function loadTasks(){
 
 let t = JSON.parse(localStorage.getItem("tasks")||"null");
@@ -339,7 +355,7 @@ localStorage.setItem("tasks",JSON.stringify(t));
 
 document.getElementById("tasks").innerHTML=
 t.map((x,i)=>`
-<div class="task">
+<div class="task ${x.d ? 'done' : ''}">
 <span>${x.n}</span>
 <label class="switch">
 <input type="checkbox" ${x.d?"checked":""} onchange="toggleTask(${i})">
