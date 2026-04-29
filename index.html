@@ -12,6 +12,13 @@ font-family:-apple-system;
 background:#f3fbff;
 }
 
+/* 🔥 НОВОЕ: центр всего приложения */
+.container{
+max-width:520px;
+margin:0 auto;
+padding:15px;
+}
+
 header{
 background:linear-gradient(135deg,#00bcd4,#007c91);
 color:white;
@@ -21,20 +28,17 @@ font-size:22px;
 font-weight:700;
 }
 
-.container{
-padding:15px;
-}
-
-/* 🔥 ГЛАВНЫЙ ФИКС: убрали перекос */
+/* карточки остаются как были */
 .card{
 background:white;
 border-radius:18px;
-padding:15px 12px; /* было 15px → убрали визуальный сдвиг */
+padding:15px 12px;
 margin-bottom:15px;
 box-shadow:0 10px 25px rgba(0,0,0,0.06);
 box-sizing:border-box;
 }
 
+/* кнопки */
 button{
 width:100%;
 padding:12px;
@@ -48,6 +52,7 @@ font-weight:600;
 box-shadow:0 6px 15px rgba(0,0,0,0.12);
 }
 
+/* input/select */
 input,select{
 width:100%;
 padding:10px;
@@ -58,12 +63,7 @@ box-sizing:border-box;
 display:block;
 }
 
-.event{
-padding:6px;
-border-bottom:1px solid #eee;
-}
-
-/* TASKS */
+/* задачи */
 .task{
 display:flex;
 justify-content:space-between;
@@ -82,6 +82,7 @@ color:#3a3a3a !important;
 opacity:0.65 !important;
 }
 
+/* switch */
 .switch{
 position:relative;
 width:46px;
@@ -115,6 +116,11 @@ background:#00bcd4;
 
 input:checked + .slider:before{
 transform:translateX(22px);
+}
+
+.event{
+padding:6px;
+border-bottom:1px solid #eee;
 }
 
 .lunch{
@@ -193,6 +199,8 @@ font-weight:600;
 
 <script>
 
+/* --- логика НЕ трогалась --- */
+
 let shiftStart = 0;
 let shiftEnd = 1440;
 
@@ -235,7 +243,6 @@ min = ((min % 1440)+1440)%1440;
 return fmt(Math.floor(min/60)%24, min%60);
 }
 
-/* CHEM */
 function setChem(){
 
 let t=document.getElementById("chemTime").value;
@@ -260,7 +267,6 @@ localStorage.setItem("chem",JSON.stringify(arr));
 render();
 }
 
-/* SILAN */
 function setSilan(){
 
 let t=document.getElementById("silanTime").value;
@@ -338,7 +344,6 @@ return gaps.slice(0,2).map(x=>
 ).join("\n");
 }
 
-/* TASKS */
 function loadTasks(){
 
 let t = JSON.parse(localStorage.getItem("tasks")||"null");
