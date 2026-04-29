@@ -1,0 +1,226 @@
+<script>
+
+let shiftStart=0;
+let shiftEnd=1440;
+
+/* SHIFT */
+function setShift(){
+localStorage.setItem("shift",document.getElementById("shiftSelect").value);
+init();
+}
+
+function loadShift(){
+
+const map={
+"7-15":[7,15],
+"15-23":[15,23],
+"23-7":[23,7],
+"9-21":[9,21],
+"21-9":[21,9]
+};
+
+let s=map[localStorage.getItem("shift")];
+
+if(!s){
+shiftStart=0;
+shiftEnd=1440;
+return;
+}
+
+shiftStart=s[0]*60;
+shiftEnd=s[1]*60;
+
+if(shiftEnd<=shiftStart) shiftEnd+=1440;
+}
+
+/* TIME */
+function fmt(h,m){
+return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
+}
+
+function format(min){
+min=min%1440;
+return fmt(Math.floor(min/60),min%60);
+}
+
+/* 🧠 НОРМАЛИЗАЦИЯ ДЛЯ СМЕНЫ */
+function normalize(min){
+if(shiftEnd>shiftStart){
+return min;
+}else{
+if(min<shiftStart) return min+1440;
+return min;
+}
+}
+
+/* CHEM */
+function setChem(){
+
+let t=document.getElementById("chemTime").value;
+if(!t)return;
+
+let [h,m]=t.split(":").map(Number);
+let start=h*60+m;
+
+let end=shiftEnd;
+
+let arr=[];
+
+for(let i=0;i<20;i++){
+
+let base=start+i*240;
+let nBase=normalize(base);
+
+if(nBase>=end) break;
+
+arr.push({
+time:format(base),
+text:"Приготовить химию"
+});
+}
+
+localStorage.setItem("chem",JSON.stringify(arr));
+render();
+}
+
+/* SILAN (ИСПРАВЛЕНО 100%) */
+function setSilan(){
+
+let t=document.getElementById("silanTime").value;
+if(!t)return;
+
+let [h,m]=t.split(":").map(Number);
+let start=h*60+m;
+
+let arr=[];
+
+for(let i=0;i<50;i++){
+
+let base=start+i*180;
+let nBase=normalize(base);
+
+if(nBase>=shiftEnd) break;
+
+let charge=base+40;
+let nCharge=normalize(charge);
+
+if(nCharge>=shiftEnd) break;
+
+arr.push({
+time:format(base),
+text:"Приготовить силан"
+});
+
+arr.push({
+time:format(charge),
+text:"Зарядить силан"
+});
+}
+
+localStorage.setItem("silan",JSON.stringify(arr));
+render();
+}
+
+/* RENDER */
+function render(){
+
+let now=new Date();
+let nowMin=now.getHours()*60+now.getMinutes();
+
+function draw(list){
+
+return list.map(e=>{
+
+let [h,m]=e.time.split(":").map(Number);
+let v=h*60+m;
+
+let past=v<nowMin;
+
+return `<div class="event ${past?'past':''}">
+${e.time} — ${e.text}
+</div>`;
+}).join("");
+}
+
+document.getElementById("chemResult").innerHTML=
+draw(JSON.parse(localStorage.getItem("chem")||"[]"));
+
+document.getElementById("silanResult").innerHTML=
+draw(JSON.parse(localStorage.getItem("silan")||"[]"));
+
+loadTasks();
+}
+
+/* 🧠 ОБЕД ВЕРНУЛСЯ (СТАБИЛЬНО) */
+function loadTasks(){
+
+let t=JSON.parse(localStorage.getItem("tasks")||"null");
+
+if(!Array.isArray(t)){
+t=[
+{n:"Обед",d:false},
+{n:"Соль",d:false},
+{n:"Щелочь",d:false},
+{n:"Шлам",d:false}
+];
+localStorage.setItem("tasks",JSON.stringify(t));
+}
+
+document.getElementById("tasks").innerHTML=
+t.map((x,i)=>`
+<div class="task">
+<span>${x.n}</span>
+<label class="switch">
+<input type="checkbox" ${x.d?'checked':''} onchange="toggle(${i})">
+<span class="slider"></span>
+</label>
+</div>
+`).join("");
+}
+
+function addTask(){
+let v=document.getElementById("newTask").value;
+if(!v)return;
+
+let t=JSON.parse(localStorage.getItem("tasks")||"[]");
+t.push({n:v,d:false});
+localStorage.setItem("tasks",JSON.stringify(t));
+
+document.getElementById("newTask").value="";
+loadTasks();
+}
+
+function toggle(i){
+let t=JSON.parse(localStorage.getItem("tasks"));
+t[i].d=!t[i].d;
+localStorage.setItem("tasks",JSON.stringify(t));
+loadTasks();
+}
+
+/* RESET */
+function resetAll(){
+localStorage.clear();
+init();
+}
+
+function init(){
+
+let shift=localStorage.getItem("shift");
+
+if(!shift){
+document.getElementById("shiftCard").style.display="block";
+document.getElementById("app").style.display="none";
+return;
+}
+
+loadShift();
+
+document.getElementById("shiftCard").style.display="none";
+document.getElementById("app").style.display="block";
+
+render();
+}
+
+init();
+
+</script>
