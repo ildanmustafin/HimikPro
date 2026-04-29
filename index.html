@@ -1,162 +1,3 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HimikPro</title>
-
-<style>
-body{
-margin:0;
-font-family:-apple-system;
-background:#f3fbff;
-}
-
-header{
-background:linear-gradient(135deg,#00bcd4,#007c91);
-color:white;
-padding:18px;
-text-align:center;
-font-size:22px;
-font-weight:700;
-}
-
-.container{padding:15px;}
-
-.card{
-background:white;
-border-radius:18px;
-padding:15px;
-margin-bottom:15px;
-box-shadow:0 10px 25px rgba(0,0,0,0.06);
-}
-
-button{
-width:100%;
-padding:12px;
-border:none;
-border-radius:12px;
-background:linear-gradient(135deg,#00e5ff,#00bcd4);
-color:white;
-font-size:15px;
-margin-top:10px;
-}
-
-input,select{
-width:100%;
-padding:10px;
-border-radius:10px;
-border:1px solid #ddd;
-margin-top:10px;
-}
-
-.event{
-padding:6px;
-border-bottom:1px solid #eee;
-}
-
-/* 🔥 ПРОШЕДШИЕ — ТЁМНО СЕРЫЕ */
-.past{
-color:#4f4f4f;
-opacity:0.9;
-}
-
-/* задачи */
-.task{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin:10px 0;
-padding:8px 0;
-border-bottom:1px solid #eee;
-}
-
-/* switch */
-.switch{
-position:relative;
-width:46px;
-height:24px;
-display:inline-block;
-}
-
-.switch input{display:none;}
-
-.slider{
-position:absolute;
-top:0;left:0;right:0;bottom:0;
-background:#ccc;
-border-radius:30px;
-}
-
-.slider:before{
-content:"";
-position:absolute;
-width:18px;height:18px;
-left:3px;bottom:3px;
-background:white;
-border-radius:50%;
-transition:.3s;
-}
-
-input:checked + .slider{
-background:#00bcd4;
-}
-
-input:checked + .slider:before{
-transform:translateX(22px);
-}
-</style>
-</head>
-
-<body>
-
-<header>HimikPro</header>
-
-<div class="container">
-
-<div class="card" id="shiftCard">
-<h3>Выбор смены</h3>
-
-<select id="shiftSelect">
-<option value="7-15">7:00 - 15:00</option>
-<option value="15-23">15:00 - 23:00</option>
-<option value="23-7">23:00 - 7:00</option>
-<option value="9-21">9:00 - 21:00</option>
-<option value="21-9">21:00 - 9:00</option>
-</select>
-
-<button onclick="setShift()">Сохранить смену</button>
-</div>
-
-<div id="app" style="display:none;">
-
-<div class="card">
-<h3>Химия</h3>
-<input type="time" id="chemTime">
-<button onclick="setChem()">Рассчитать</button>
-<div id="chemResult"></div>
-</div>
-
-<div class="card">
-<h3>Силан</h3>
-<input type="time" id="silanTime">
-<button onclick="setSilan()">Рассчитать</button>
-<div id="silanResult"></div>
-</div>
-
-<div class="card">
-<h3>Задачи</h3>
-<div id="tasks"></div>
-<input type="text" id="newTask" placeholder="Новая задача">
-<button onclick="addTask()">Добавить задачу</button>
-</div>
-
-<div class="card">
-<button onclick="resetAll()">Новая смена</button>
-</div>
-
-</div>
-
 <script>
 
 let shiftStart=0;
@@ -192,24 +33,23 @@ shiftEnd=s[1]*60;
 if(shiftEnd<=shiftStart) shiftEnd+=1440;
 }
 
-/* формат */
+/* TIME */
 function fmt(h,m){
 return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
 }
 
-function toMin(t){
-let [h,m]=t.split(":").map(Number);
-let v=h*60+m;
-if(v<shiftStart) v+=1440;
-return v;
+function format(min){
+min=min%1440;
+return fmt(Math.floor(min/60),min%60);
 }
 
-/* 🔥 ОБЯЗАТЕЛЬНЫЙ СТОП ПО СМЕНЕ */
-function inShift(min){
+/* 🧠 НОРМАЛИЗАЦИЯ ДЛЯ СМЕНЫ */
+function normalize(min){
 if(shiftEnd>shiftStart){
-return min>=shiftStart && min<shiftEnd;
+return min;
 }else{
-return min>=shiftStart || min<shiftEnd;
+if(min<shiftStart) return min+1440;
+return min;
 }
 }
 
@@ -229,10 +69,12 @@ let arr=[];
 for(let i=0;i<20;i++){
 
 let base=start+i*240;
-if(!inShift(base)) break;
+let nBase=normalize(base);
+
+if(nBase>=end) break;
 
 arr.push({
-time:fmt(Math.floor(base/60)%24,base%60),
+time:format(base),
 text:"Приготовить химию"
 });
 }
@@ -255,18 +97,22 @@ let arr=[];
 for(let i=0;i<50;i++){
 
 let base=start+i*180;
-if(!inShift(base)) break;
+let nBase=normalize(base);
+
+if(nBase>=shiftEnd) break;
 
 let charge=base+40;
-if(!inShift(charge)) break;
+let nCharge=normalize(charge);
+
+if(nCharge>=shiftEnd) break;
 
 arr.push({
-time:fmt(Math.floor(base/60)%24,base%60),
+time:format(base),
 text:"Приготовить силан"
 });
 
 arr.push({
-time:fmt(Math.floor(charge/60)%24,charge%60),
+time:format(charge),
 text:"Зарядить силан"
 });
 }
@@ -281,17 +127,12 @@ function render(){
 let now=new Date();
 let nowMin=now.getHours()*60+now.getMinutes();
 
-/* корректировка ночной смены */
-if(nowMin<shiftStart) nowMin+=1440;
-
 function draw(list){
 
 return list.map(e=>{
 
 let [h,m]=e.time.split(":").map(Number);
 let v=h*60+m;
-
-if(v<shiftStart) v+=1440;
 
 let past=v<nowMin;
 
@@ -310,7 +151,7 @@ draw(JSON.parse(localStorage.getItem("silan")||"[]"));
 loadTasks();
 }
 
-/* TASKS (ОБЕД ВЕРНУЛСЯ) */
+/* 🧠 ОБЕД ВЕРНУЛСЯ (СТАБИЛЬНО) */
 function loadTasks(){
 
 let t=JSON.parse(localStorage.getItem("tasks")||"null");
@@ -383,6 +224,3 @@ render();
 init();
 
 </script>
-
-</body>
-</html>
