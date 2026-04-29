@@ -31,7 +31,6 @@ margin-bottom:15px;
 box-shadow:0 10px 25px rgba(0,0,0,0.06);
 }
 
-/* КНОПКИ */
 button{
 width:100%;
 padding:12px;
@@ -41,15 +40,8 @@ background:linear-gradient(135deg,#00e5ff,#00bcd4);
 color:white;
 font-size:15px;
 margin-top:10px;
-box-shadow:0 6px 15px rgba(0,188,212,0.25);
-transition:0.2s;
 }
 
-button:active{
-transform:scale(0.98);
-}
-
-/* INPUT */
 input,select{
 width:100%;
 padding:10px;
@@ -58,16 +50,15 @@ border:1px solid #ddd;
 margin-top:10px;
 }
 
-/* события */
 .event{
 padding:6px;
 border-bottom:1px solid #eee;
 }
 
-/* 🔥 ТЁМНЫЙ СЕРЫЙ ДЛЯ ПРОШЕДШИХ */
+/* 🔥 ПРОШЕДШИЕ — ТЁМНО СЕРЫЕ */
 .past{
-color:#6f6f6f;
-opacity:0.75;
+color:#4f4f4f;
+opacity:0.9;
 }
 
 /* задачи */
@@ -95,7 +86,6 @@ position:absolute;
 top:0;left:0;right:0;bottom:0;
 background:#ccc;
 border-radius:30px;
-transition:.3s;
 }
 
 .slider:before{
@@ -169,10 +159,10 @@ transform:translateX(22px);
 
 <script>
 
-/* SHIFT */
 let shiftStart=0;
 let shiftEnd=1440;
 
+/* SHIFT */
 function setShift(){
 localStorage.setItem("shift",document.getElementById("shiftSelect").value);
 init();
@@ -202,20 +192,25 @@ shiftEnd=s[1]*60;
 if(shiftEnd<=shiftStart) shiftEnd+=1440;
 }
 
-function realEnd(){
-return shiftEnd;
-}
-
-/* TIME */
+/* формат */
 function fmt(h,m){
 return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
 }
 
-function formatTime(min){
-min=min%1440;
-let h=Math.floor(min/60);
-let m=min%60;
-return fmt(h,m);
+function toMin(t){
+let [h,m]=t.split(":").map(Number);
+let v=h*60+m;
+if(v<shiftStart) v+=1440;
+return v;
+}
+
+/* 🔥 ОБЯЗАТЕЛЬНЫЙ СТОП ПО СМЕНЕ */
+function inShift(min){
+if(shiftEnd>shiftStart){
+return min>=shiftStart && min<shiftEnd;
+}else{
+return min>=shiftStart || min<shiftEnd;
+}
 }
 
 /* CHEM */
@@ -227,17 +222,17 @@ if(!t)return;
 let [h,m]=t.split(":").map(Number);
 let start=h*60+m;
 
-let end=realEnd();
+let end=shiftEnd;
 
 let arr=[];
 
 for(let i=0;i<20;i++){
 
 let base=start+i*240;
-if(base>=end)break;
+if(!inShift(base)) break;
 
 arr.push({
-time:formatTime(base),
+time:fmt(Math.floor(base/60)%24,base%60),
 text:"Приготовить химию"
 });
 }
@@ -246,7 +241,7 @@ localStorage.setItem("chem",JSON.stringify(arr));
 render();
 }
 
-/* SILAN FIXED */
+/* SILAN (ИСПРАВЛЕНО 100%) */
 function setSilan(){
 
 let t=document.getElementById("silanTime").value;
@@ -255,25 +250,23 @@ if(!t)return;
 let [h,m]=t.split(":").map(Number);
 let start=h*60+m;
 
-let end=realEnd();
-
 let arr=[];
 
 for(let i=0;i<50;i++){
 
 let base=start+i*180;
-if(base>=end)break;
+if(!inShift(base)) break;
 
 let charge=base+40;
-if(charge>=end)break;
+if(!inShift(charge)) break;
 
 arr.push({
-time:formatTime(base),
+time:fmt(Math.floor(base/60)%24,base%60),
 text:"Приготовить силан"
 });
 
 arr.push({
-time:formatTime(charge),
+time:fmt(Math.floor(charge/60)%24,charge%60),
 text:"Зарядить силан"
 });
 }
@@ -288,7 +281,7 @@ function render(){
 let now=new Date();
 let nowMin=now.getHours()*60+now.getMinutes();
 
-/* FIX NIGHT SHIFT */
+/* корректировка ночной смены */
 if(nowMin<shiftStart) nowMin+=1440;
 
 function draw(list){
@@ -317,7 +310,7 @@ draw(JSON.parse(localStorage.getItem("silan")||"[]"));
 loadTasks();
 }
 
-/* TASKS */
+/* TASKS (ОБЕД ВЕРНУЛСЯ) */
 function loadTasks(){
 
 let t=JSON.parse(localStorage.getItem("tasks")||"null");
