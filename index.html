@@ -36,12 +36,10 @@ width:100%;
 padding:12px;
 border:none;
 border-radius:12px;
-background:linear-gradient(135deg,#00bcd4,#007c91);
+background:#00bcd4;
 color:white;
 font-size:15px;
 margin-top:10px;
-font-weight:600;
-box-shadow:0 6px 15px rgba(0,0,0,0.12);
 }
 
 input,select{
@@ -59,10 +57,19 @@ padding:6px;
 border-bottom:1px solid #eee;
 }
 
-/* ========================= */
-/* 🔥 ГЛАВНЫЙ ФИКС ЗАДАЧ */
-/* ========================= */
+.highlight{
+background:#e0f7fa;
+border-left:5px solid #00bcd4;
+font-weight:600;
+}
 
+.lunch{
+background:#e8f5e9;
+border-left:5px solid #4caf50;
+white-space:pre-line;
+}
+
+/* SWITCH */
 .task{
 display:flex;
 justify-content:space-between;
@@ -70,27 +77,7 @@ align-items:center;
 margin:10px 0;
 padding:8px 0;
 border-bottom:1px solid #eee;
-
-/* 👉 ВАЖНО: цвет теперь тут */
-color:#000000;
 }
-
-/* невыполненные */
-.task:not(.done){
-color:#000000 !important;
-}
-
-/* выполненные */
-.task.done{
-color:#3a3a3a !important;
-opacity:0.85;
-}
-
-.task.done span{
-color:#3a3a3a !important;
-}
-
-/* ========================= */
 
 .switch{
 position:relative;
@@ -125,18 +112,6 @@ background:#00bcd4;
 
 input:checked + .slider:before{
 transform:translateX(22px);
-}
-
-.lunch{
-background:#e8f5e9;
-border-left:5px solid #4caf50;
-white-space:pre-line;
-}
-
-.highlight{
-background:#e0f7fa;
-border-left:5px solid #00bcd4;
-font-weight:600;
 }
 </style>
 </head>
@@ -241,12 +216,97 @@ function fmt(h,m){
 return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
 }
 
-function formatMin(min){
-min = ((min % 1440)+1440)%1440;
-return fmt(Math.floor(min/60)%24, min%60);
+/* CHEM */
+function setChem(){
+let t=document.getElementById("chemTime").value;
+if(!t)return;
+
+let [h,m]=t.split(":").map(Number);
+let start=h*60+m;
+
+let arr=[];
+
+for(let i=0;i<6;i++){
+let t=start+i*240;
+if(t>shiftEnd)break;
+
+arr.push({
+time:fmt(Math.floor(t/60)%24,t%60),
+text:"Приготовить химию"
+});
 }
 
-/* TASK RENDER FIX */
+localStorage.setItem("chem",JSON.stringify(arr));
+render();
+}
+
+/* SILAN */
+function setSilan(){
+let t=document.getElementById("silanTime").value;
+if(!t)return;
+
+let [h,m]=t.split(":").map(Number);
+let start=h*60+m;
+
+let arr=[];
+
+for(let i=0;i<10;i++){
+let base=start+i*180;
+if(base>shiftEnd)break;
+
+arr.push({
+time:fmt(Math.floor(base/60)%24,base%60),
+text:"Приготовить силан"
+});
+
+arr.push({
+time:fmt(Math.floor((base+40)/60)%24,(base+40)%60),
+text:"Зарядить силан"
+});
+}
+
+localStorage.setItem("silan",JSON.stringify(arr));
+render();
+}
+
+/* LUNCH */
+function lunch(){
+
+let ev=[];
+
+(JSON.parse(localStorage.getItem("chem")||"[]"))
+.forEach(e=>ev.push({s:toMin(e.time),e:toMin(e.time)+20}));
+
+(JSON.parse(localStorage.getItem("silan")||"[]"))
+.forEach(e=>{
+let d=e.text.includes("Приготовить")?10:5;
+ev.push({s:toMin(e.time),e:toMin(e.time)+d});
+});
+
+ev.sort((a,b)=>a.s-b.s);
+
+let gaps=[];
+
+for(let i=0;i<ev.length-1;i++){
+let g=ev[i+1].s-ev[i].e;
+if(g>=50){
+gaps.push({s:ev[i].e,e:ev[i+1].s});
+}
+}
+
+if(!gaps.length) return "Нет времени на обед";
+
+return gaps.slice(0,3).map(x=>
+`${fmt(Math.floor(x.s/60)%24,x.s%60)} — ${fmt(Math.floor(x.e/60)%24,x.e%60)}`
+).join("\n");
+}
+
+function toMin(t){
+let [h,m]=t.split(":").map(Number);
+return h*60+m;
+}
+
+/* TASKS */
 function loadTasks(){
 
 let t = JSON.parse(localStorage.getItem("tasks")||"null");
@@ -263,7 +323,7 @@ localStorage.setItem("tasks",JSON.stringify(t));
 
 document.getElementById("tasks").innerHTML=
 t.map((x,i)=>`
-<div class="task ${x.d ? 'done' : ''}">
+<div class="task">
 <span>${x.n}</span>
 <label class="switch">
 <input type="checkbox" ${x.d?"checked":""} onchange="toggleTask(${i})">
@@ -273,7 +333,6 @@ t.map((x,i)=>`
 `).join("");
 }
 
-/* остальной JS НЕ трогал */
 function addTask(){
 let v=document.getElementById("newTask").value;
 if(!v)return;
@@ -298,6 +357,7 @@ localStorage.clear();
 init();
 }
 
+/* RENDER */
 function render(){
 
 document.getElementById("chemResult").innerHTML=
@@ -307,6 +367,8 @@ document.getElementById("chemResult").innerHTML=
 document.getElementById("silanResult").innerHTML=
 (JSON.parse(localStorage.getItem("silan")||"[]"))
 .map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
+
+document.getElementById("lunchResult").innerText=lunch();
 
 loadTasks();
 }
