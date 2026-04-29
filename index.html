@@ -31,7 +31,7 @@ margin-bottom:15px;
 box-shadow:0 10px 25px rgba(0,0,0,0.06);
 }
 
-/* 🔥 ОБНОВЛЁННЫЕ КНОПКИ */
+/* BUTTONS */
 button{
 width:100%;
 padding:12px;
@@ -67,19 +67,7 @@ padding:6px;
 border-bottom:1px solid #eee;
 }
 
-.highlight{
-background:#e0f7fa;
-border-left:5px solid #00bcd4;
-font-weight:600;
-}
-
-.lunch{
-background:#e8f5e9;
-border-left:5px solid #4caf50;
-white-space:pre-line;
-}
-
-/* SWITCH */
+/* TASKS */
 .task{
 display:flex;
 justify-content:space-between;
@@ -123,6 +111,19 @@ background:#00bcd4;
 input:checked + .slider:before{
 transform:translateX(22px);
 }
+
+/* SHIFT / LUNCH */
+.lunch{
+background:#e8f5e9;
+border-left:5px solid #4caf50;
+white-space:pre-line;
+}
+
+.highlight{
+background:#e0f7fa;
+border-left:5px solid #00bcd4;
+font-weight:600;
+}
 </style>
 </head>
 
@@ -132,6 +133,7 @@ transform:translateX(22px);
 
 <div class="container">
 
+<!-- SHIFT -->
 <div class="card" id="shiftCard">
 <h3>Выбор смены</h3>
 
@@ -146,6 +148,7 @@ transform:translateX(22px);
 <button onclick="setShift()">Сохранить смену</button>
 </div>
 
+<!-- APP -->
 <div id="app" style="display:none;">
 
 <div class="card">
@@ -336,7 +339,7 @@ let [h,m]=t.split(":").map(Number);
 return h*60+m;
 }
 
-/* TASKS */
+/* TASKS (FIX COLORS) */
 function loadTasks(){
 
 let t = JSON.parse(localStorage.getItem("tasks")||"null");
@@ -353,13 +356,18 @@ localStorage.setItem("tasks",JSON.stringify(t));
 
 document.getElementById("tasks").innerHTML=
 t.map((x,i)=>`
+
 <div class="task">
-<span>${x.n}</span>
+<span style="color:${x.d ? '#4a4a4a' : '#000000'}; opacity:${x.d ? '0.75' : '1'}">
+${x.n}
+</span>
+
 <label class="switch">
 <input type="checkbox" ${x.d?"checked":""} onchange="toggleTask(${i})">
 <span class="slider"></span>
 </label>
 </div>
+
 `).join("");
 }
 
