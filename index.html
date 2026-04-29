@@ -31,6 +31,7 @@ margin-bottom:15px;
 box-shadow:0 10px 25px rgba(0,0,0,0.06);
 }
 
+/* КНОПКИ */
 button{
 width:100%;
 padding:12px;
@@ -44,8 +45,11 @@ box-shadow:0 6px 15px rgba(0,188,212,0.25);
 transition:0.2s;
 }
 
-button:active{transform:scale(0.98);}
+button:active{
+transform:scale(0.98);
+}
 
+/* INPUT */
 input,select{
 width:100%;
 padding:10px;
@@ -54,17 +58,19 @@ border:1px solid #ddd;
 margin-top:10px;
 }
 
+/* события */
 .event{
 padding:6px;
 border-bottom:1px solid #eee;
 }
 
-/* серые прошедшие */
+/* 🔥 ТЁМНЫЙ СЕРЫЙ ДЛЯ ПРОШЕДШИХ */
 .past{
-color:#999;
-opacity:0.6;
+color:#6f6f6f;
+opacity:0.75;
 }
 
+/* задачи */
 .task{
 display:flex;
 justify-content:space-between;
@@ -74,6 +80,7 @@ padding:8px 0;
 border-bottom:1px solid #eee;
 }
 
+/* switch */
 .switch{
 position:relative;
 width:46px;
@@ -199,12 +206,21 @@ function realEnd(){
 return shiftEnd;
 }
 
+/* TIME */
 function fmt(h,m){
 return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
 }
 
+function formatTime(min){
+min=min%1440;
+let h=Math.floor(min/60);
+let m=min%60;
+return fmt(h,m);
+}
+
 /* CHEM */
 function setChem(){
+
 let t=document.getElementById("chemTime").value;
 if(!t)return;
 
@@ -216,11 +232,12 @@ let end=realEnd();
 let arr=[];
 
 for(let i=0;i<20;i++){
+
 let base=start+i*240;
 if(base>=end)break;
 
 arr.push({
-time:fmt(Math.floor(base/60)%24,base%60),
+time:formatTime(base),
 text:"Приготовить химию"
 });
 }
@@ -231,6 +248,7 @@ render();
 
 /* SILAN FIXED */
 function setSilan(){
+
 let t=document.getElementById("silanTime").value;
 if(!t)return;
 
@@ -250,12 +268,12 @@ let charge=base+40;
 if(charge>=end)break;
 
 arr.push({
-time:fmt(Math.floor(base/60)%24,base%60),
+time:formatTime(base),
 text:"Приготовить силан"
 });
 
 arr.push({
-time:fmt(Math.floor(charge/60)%24,charge%60),
+time:formatTime(charge),
 text:"Зарядить силан"
 });
 }
@@ -270,14 +288,15 @@ function render(){
 let now=new Date();
 let nowMin=now.getHours()*60+now.getMinutes();
 
-/* FIX SHIFT TIME FOR NIGHT */
+/* FIX NIGHT SHIFT */
 if(nowMin<shiftStart) nowMin+=1440;
 
 function draw(list){
+
 return list.map(e=>{
 
-let [h,m]=e.time.split(":");
-let v=+h*60+ +m;
+let [h,m]=e.time.split(":").map(Number);
+let v=h*60+m;
 
 if(v<shiftStart) v+=1440;
 
