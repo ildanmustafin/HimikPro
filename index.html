@@ -31,7 +31,6 @@ margin-bottom:15px;
 box-shadow:0 10px 25px rgba(0,0,0,0.06);
 }
 
-/* BUTTONS */
 button{
 width:100%;
 padding:12px;
@@ -43,16 +42,10 @@ font-size:15px;
 margin-top:10px;
 font-weight:600;
 box-shadow:0 6px 15px rgba(0,0,0,0.12);
-transition:0.2s ease;
 }
 
-button:hover{filter:brightness(1.05);}
-button:active{transform:scale(0.98);}
-
-/* INPUT FIX */
 input,select{
 width:100%;
-max-width:180px;
 padding:10px;
 border-radius:10px;
 border:1px solid #ddd;
@@ -72,15 +65,6 @@ align-items:center;
 margin:10px 0;
 padding:8px 0;
 border-bottom:1px solid #eee;
-}
-
-.task span{
-transition:0.2s ease;
-}
-
-.task.done span{
-color:#3b3b3b !important;
-opacity:0.65;
 }
 
 .switch{
@@ -118,7 +102,6 @@ input:checked + .slider:before{
 transform:translateX(22px);
 }
 
-/* LUNCH */
 .lunch{
 background:#e8f5e9;
 border-left:5px solid #4caf50;
@@ -139,7 +122,6 @@ font-weight:600;
 
 <div class="container">
 
-<!-- SHIFT -->
 <div class="card" id="shiftCard">
 <h3>Выбор смены</h3>
 
@@ -158,14 +140,14 @@ font-weight:600;
 
 <div class="card">
 <h3>Химия</h3>
-<input type="time" id="chemTime" placeholder="начальное время">
+<input type="time" id="chemTime">
 <button onclick="setChem()">Рассчитать</button>
 <div id="chemResult"></div>
 </div>
 
 <div class="card">
 <h3>Силан</h3>
-<input type="time" id="silanTime" placeholder="начальное время">
+<input type="time" id="silanTime">
 <button onclick="setSilan()">Рассчитать</button>
 <div id="silanResult"></div>
 </div>
@@ -265,7 +247,7 @@ localStorage.setItem("chem",JSON.stringify(arr));
 render();
 }
 
-/* SILAN FIXED */
+/* SILAN */
 function setSilan(){
 
 let t=document.getElementById("silanTime").value;
@@ -344,7 +326,7 @@ let [h,m]=t.split(":").map(Number);
 return h*60+m;
 }
 
-/* TASKS FIX */
+/* TASKS */
 function loadTasks(){
 
 let t = JSON.parse(localStorage.getItem("tasks")||"null");
@@ -361,17 +343,13 @@ localStorage.setItem("tasks",JSON.stringify(t));
 
 document.getElementById("tasks").innerHTML=
 t.map((x,i)=>`
-
-<div class="task ${x.d ? 'done' : ''}">
+<div class="task">
 <span>${x.n}</span>
-
 <label class="switch">
 <input type="checkbox" ${x.d?"checked":""} onchange="toggleTask(${i})">
 <span class="slider"></span>
 </label>
-
 </div>
-
 `).join("");
 }
 
