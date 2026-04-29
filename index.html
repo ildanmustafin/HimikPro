@@ -44,14 +44,14 @@ font-weight:600;
 box-shadow:0 6px 15px rgba(0,0,0,0.12);
 }
 
-/* 🔧 ЕДИНСТВЕННАЯ ПРАВКА — INPUT ЧУТЬ УЖЕ */
+/* ✅ ИСПРАВЛЕНО: INPUT = КАК КНОПКА ПО ШИРИНЕ */
 input,select{
 width:100%;
-max-width:165px;   /* было больше → стало чуть уже */
 padding:10px;
 border-radius:10px;
 border:1px solid #ddd;
 margin-top:10px;
+box-sizing:border-box;
 }
 
 .event{
@@ -183,7 +183,6 @@ font-weight:600;
 let shiftStart = 0;
 let shiftEnd = 1440;
 
-/* SHIFT */
 function setShift(){
 localStorage.setItem("shift", document.getElementById("shiftSelect").value);
 init();
@@ -214,7 +213,6 @@ shiftEnd = s[1]*60;
 if(shiftEnd <= shiftStart) shiftEnd += 1440;
 }
 
-/* TIME */
 function fmt(h,m){
 return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
 }
@@ -224,7 +222,6 @@ min = ((min % 1440)+1440)%1440;
 return fmt(Math.floor(min/60)%24, min%60);
 }
 
-/* CHEM */
 function setChem(){
 
 let t=document.getElementById("chemTime").value;
@@ -249,7 +246,6 @@ localStorage.setItem("chem",JSON.stringify(arr));
 render();
 }
 
-/* SILAN */
 function setSilan(){
 
 let t=document.getElementById("silanTime").value;
@@ -291,7 +287,11 @@ localStorage.setItem("silan",JSON.stringify(arr));
 render();
 }
 
-/* LUNCH */
+function toMin(t){
+let [h,m]=t.split(":").map(Number);
+return h*60+m;
+}
+
 function lunch(){
 
 let ev=[];
@@ -323,12 +323,6 @@ return gaps.slice(0,2).map(x=>
 ).join("\n");
 }
 
-function toMin(t){
-let [h,m]=t.split(":").map(Number);
-return h*60+m;
-}
-
-/* TASKS */
 function loadTasks(){
 
 let t = JSON.parse(localStorage.getItem("tasks")||"null");
@@ -374,13 +368,11 @@ localStorage.setItem("tasks",JSON.stringify(t));
 loadTasks();
 }
 
-/* RESET */
 function resetAll(){
 localStorage.clear();
 init();
 }
 
-/* RENDER */
 function render(){
 
 document.getElementById("chemResult").innerHTML=
@@ -396,7 +388,6 @@ document.getElementById("lunchResult").innerText=lunch();
 loadTasks();
 }
 
-/* INIT */
 function init(){
 
 let shift = localStorage.getItem("shift");
