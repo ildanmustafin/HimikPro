@@ -44,16 +44,18 @@ font-weight:600;
 box-shadow:0 6px 15px rgba(0,0,0,0.12);
 }
 
-/* 🎯 INPUT — ЦЕНТРИРОВАН */
+/* 🔥 ФИНАЛЬНЫЙ ФИКС INPUT/SELECT */
 input,select{
 width:100%;
-max-width:260px;
 padding:10px;
 border-radius:10px;
 border:1px solid #ddd;
 margin-top:10px;
 box-sizing:border-box;
 display:block;
+
+/* важно: убираем любые ограничения */
+max-width:100%;
 margin-left:auto;
 margin-right:auto;
 }
@@ -73,12 +75,10 @@ padding:8px 0;
 border-bottom:1px solid #eee;
 }
 
-/* 🔥 НЕ ВЫПОЛНЕНО */
 .task span{
 color:#1f1f1f !important;
 }
 
-/* 🔥 ВЫПОЛНЕНО */
 .task.done span{
 color:#3a3a3a !important;
 opacity:0.65 !important;
@@ -309,7 +309,6 @@ let [h,m]=t.split(":").map(Number);
 return h*60+m;
 }
 
-/* LUNCH */
 function lunch(){
 
 let ev=[];
