@@ -12,13 +12,6 @@ font-family:-apple-system;
 background:#f3fbff;
 }
 
-/* 🔥 НОВОЕ: центр всего приложения */
-.container{
-max-width:520px;
-margin:0 auto;
-padding:15px;
-}
-
 header{
 background:linear-gradient(135deg,#00bcd4,#007c91);
 color:white;
@@ -28,17 +21,16 @@ font-size:22px;
 font-weight:700;
 }
 
-/* карточки остаются как были */
+.container{padding:15px;}
+
 .card{
 background:white;
 border-radius:18px;
-padding:15px 12px;
+padding:15px;
 margin-bottom:15px;
 box-shadow:0 10px 25px rgba(0,0,0,0.06);
-box-sizing:border-box;
 }
 
-/* кнопки */
 button{
 width:100%;
 padding:12px;
@@ -52,7 +44,6 @@ font-weight:600;
 box-shadow:0 6px 15px rgba(0,0,0,0.12);
 }
 
-/* input/select */
 input,select{
 width:100%;
 padding:10px;
@@ -63,7 +54,13 @@ box-sizing:border-box;
 display:block;
 }
 
-/* задачи */
+.event{
+padding:6px;
+border-bottom:1px solid #eee;
+}
+
+/* ===== TASKS ===== */
+
 .task{
 display:flex;
 justify-content:space-between;
@@ -73,16 +70,17 @@ padding:8px 0;
 border-bottom:1px solid #eee;
 }
 
+/* 🔥 НЕВЫПОЛНЕННЫЕ */
 .task span{
-color:#1f1f1f !important;
+color:#000000;
 }
 
+/* 🔥 ВЫПОЛНЕННЫЕ */
 .task.done span{
 color:#3a3a3a !important;
-opacity:0.65 !important;
+opacity:0.9;
 }
 
-/* switch */
 .switch{
 position:relative;
 width:46px;
@@ -118,11 +116,6 @@ input:checked + .slider:before{
 transform:translateX(22px);
 }
 
-.event{
-padding:6px;
-border-bottom:1px solid #eee;
-}
-
 .lunch{
 background:#e8f5e9;
 border-left:5px solid #4caf50;
@@ -143,6 +136,7 @@ font-weight:600;
 
 <div class="container">
 
+<!-- SHIFT -->
 <div class="card" id="shiftCard">
 <h3>Выбор смены</h3>
 
@@ -157,6 +151,7 @@ font-weight:600;
 <button onclick="setShift()">Сохранить смену</button>
 </div>
 
+<!-- APP -->
 <div id="app" style="display:none;">
 
 <div class="card">
@@ -199,11 +194,10 @@ font-weight:600;
 
 <script>
 
-/* --- логика НЕ трогалась --- */
-
 let shiftStart = 0;
 let shiftEnd = 1440;
 
+/* SHIFT */
 function setShift(){
 localStorage.setItem("shift", document.getElementById("shiftSelect").value);
 init();
@@ -243,6 +237,7 @@ min = ((min % 1440)+1440)%1440;
 return fmt(Math.floor(min/60)%24, min%60);
 }
 
+/* CHEM */
 function setChem(){
 
 let t=document.getElementById("chemTime").value;
@@ -267,6 +262,7 @@ localStorage.setItem("chem",JSON.stringify(arr));
 render();
 }
 
+/* SILAN */
 function setSilan(){
 
 let t=document.getElementById("silanTime").value;
@@ -308,6 +304,7 @@ localStorage.setItem("silan",JSON.stringify(arr));
 render();
 }
 
+/* LUNCH */
 function toMin(t){
 let [h,m]=t.split(":").map(Number);
 return h*60+m;
@@ -344,6 +341,7 @@ return gaps.slice(0,2).map(x=>
 ).join("\n");
 }
 
+/* TASKS */
 function loadTasks(){
 
 let t = JSON.parse(localStorage.getItem("tasks")||"null");
@@ -394,6 +392,7 @@ localStorage.clear();
 init();
 }
 
+/* RENDER */
 function render(){
 
 document.getElementById("chemResult").innerHTML=
@@ -409,6 +408,7 @@ document.getElementById("lunchResult").innerText=lunch();
 loadTasks();
 }
 
+/* INIT */
 function init(){
 
 let shift = localStorage.getItem("shift");
