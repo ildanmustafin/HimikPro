@@ -31,7 +31,6 @@ margin-bottom:15px;
 box-shadow:0 10px 25px rgba(0,0,0,0.06);
 }
 
-/* 🔥 ГРАДИЕНТНЫЕ КНОПКИ */
 button{
 width:100%;
 padding:12px;
@@ -45,10 +44,7 @@ box-shadow:0 6px 15px rgba(0,188,212,0.25);
 transition:0.2s;
 }
 
-button:active{
-transform:scale(0.98);
-box-shadow:0 3px 10px rgba(0,188,212,0.2);
-}
+button:active{transform:scale(0.98);}
 
 input,select{
 width:100%;
@@ -63,13 +59,12 @@ padding:6px;
 border-bottom:1px solid #eee;
 }
 
-/* 🔥 серые прошедшие события */
+/* серые прошедшие */
 .past{
 color:#999;
 opacity:0.6;
 }
 
-/* задачи */
 .task{
 display:flex;
 justify-content:space-between;
@@ -200,21 +195,12 @@ shiftEnd=s[1]*60;
 if(shiftEnd<=shiftStart) shiftEnd+=1440;
 }
 
-/* TIME */
+function realEnd(){
+return shiftEnd;
+}
+
 function fmt(h,m){
 return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
-}
-
-function toMin(t){
-let [h,m]=t.split(":").map(Number);
-let v=h*60+m;
-if(v<shiftStart) v+=1440;
-return v;
-}
-
-/* FIX SHIFT END */
-function realEnd(){
-return shiftEnd<=shiftStart ? shiftEnd+1440 : shiftEnd;
 }
 
 /* CHEM */
@@ -225,20 +211,25 @@ if(!t)return;
 let [h,m]=t.split(":").map(Number);
 let start=h*60+m;
 
+let end=realEnd();
+
 let arr=[];
 
-for(let i=0;i<6;i++){
+for(let i=0;i<20;i++){
 let base=start+i*240;
-if(base>realEnd())break;
+if(base>=end)break;
 
-arr.push({time:fmt(Math.floor(base/60)%24,base%60),text:"Приготовить химию"});
+arr.push({
+time:fmt(Math.floor(base/60)%24,base%60),
+text:"Приготовить химию"
+});
 }
 
 localStorage.setItem("chem",JSON.stringify(arr));
 render();
 }
 
-/* SILAN (FIXED NIGHT SHIFT BUG) */
+/* SILAN FIXED */
 function setSilan(){
 let t=document.getElementById("silanTime").value;
 if(!t)return;
@@ -246,35 +237,49 @@ if(!t)return;
 let [h,m]=t.split(":").map(Number);
 let start=h*60+m;
 
+let end=realEnd();
+
 let arr=[];
 
-for(let i=0;i<10;i++){
+for(let i=0;i<50;i++){
 
 let base=start+i*180;
-if(base>realEnd())break;
+if(base>=end)break;
 
 let charge=base+40;
-if(charge>realEnd())break;
+if(charge>=end)break;
 
-arr.push({time:fmt(Math.floor(base/60)%24,base%60),text:"Приготовить силан"});
-arr.push({time:fmt(Math.floor(charge/60)%24,charge%60),text:"Зарядить силан"});
+arr.push({
+time:fmt(Math.floor(base/60)%24,base%60),
+text:"Приготовить силан"
+});
+
+arr.push({
+time:fmt(Math.floor(charge/60)%24,charge%60),
+text:"Зарядить силан"
+});
 }
 
 localStorage.setItem("silan",JSON.stringify(arr));
 render();
 }
 
-/* RENDER WITH GRAY PAST EVENTS */
+/* RENDER */
 function render(){
 
 let now=new Date();
 let nowMin=now.getHours()*60+now.getMinutes();
 
+/* FIX SHIFT TIME FOR NIGHT */
+if(nowMin<shiftStart) nowMin+=1440;
+
 function draw(list){
 return list.map(e=>{
 
-let t=e.time.split(":");
-let v=+t[0]*60+ +t[1];
+let [h,m]=e.time.split(":");
+let v=+h*60+ +m;
+
+if(v<shiftStart) v+=1440;
 
 let past=v<nowMin;
 
@@ -295,10 +300,16 @@ loadTasks();
 
 /* TASKS */
 function loadTasks(){
+
 let t=JSON.parse(localStorage.getItem("tasks")||"null");
 
 if(!Array.isArray(t)){
-t=[{n:"Обед",d:false},{n:"Соль",d:false},{n:"Щелочь",d:false},{n:"Шлам",d:false}];
+t=[
+{n:"Обед",d:false},
+{n:"Соль",d:false},
+{n:"Щелочь",d:false},
+{n:"Шлам",d:false}
+];
 localStorage.setItem("tasks",JSON.stringify(t));
 }
 
@@ -339,7 +350,6 @@ localStorage.clear();
 init();
 }
 
-/* INIT SAFE */
 function init(){
 
 let shift=localStorage.getItem("shift");
