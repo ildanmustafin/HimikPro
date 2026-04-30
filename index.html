@@ -3,15 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HimikPro</title>
+<title>MirrorMaker</title>
 
 <style>
-body{
-margin:0;
-font-family:-apple-system;
-background:#f3fbff;
-}
-
+body{margin:0;font-family:-apple-system;background:#f3fbff;}
 header{
 background:linear-gradient(135deg,#00bcd4,#007c91);
 color:white;
@@ -19,9 +14,10 @@ padding:18px;
 text-align:center;
 font-size:22px;
 font-weight:700;
+cursor:pointer;
 }
 
-.container{padding:15px;}
+.container{padding:15px;max-width:600px;margin:auto;}
 
 .card{
 background:white;
@@ -31,7 +27,6 @@ margin-bottom:15px;
 box-shadow:0 10px 25px rgba(0,0,0,0.06);
 }
 
-/* 🔥 ОБНОВЛЁННЫЕ КНОПКИ */
 button{
 width:100%;
 padding:12px;
@@ -41,17 +36,6 @@ background:linear-gradient(135deg,#00bcd4,#007c91);
 color:white;
 font-size:15px;
 margin-top:10px;
-font-weight:600;
-box-shadow:0 6px 15px rgba(0,0,0,0.12);
-transition:0.2s ease;
-}
-
-button:hover{
-filter:brightness(1.05);
-}
-
-button:active{
-transform:scale(0.98);
 }
 
 input,select{
@@ -60,370 +44,260 @@ padding:10px;
 border-radius:10px;
 border:1px solid #ddd;
 margin-top:10px;
+box-sizing:border-box;
 }
 
-.event{
+img{width:100%;border-radius:12px;margin-top:10px;}
+
+.sectionTitle{
+font-weight:700;
+border:2px solid #00bcd4;
 padding:6px;
-border-bottom:1px solid #eee;
+border-radius:8px;
+margin-top:10px;
 }
 
-.highlight{
-background:#e0f7fa;
-border-left:5px solid #00bcd4;
-font-weight:600;
+.sectionText{
+font-style:italic;
+margin-bottom:10px;
 }
 
-.lunch{
-background:#e8f5e9;
-border-left:5px solid #4caf50;
-white-space:pre-line;
-}
-
-/* SWITCH */
 .task{
 display:flex;
 justify-content:space-between;
-align-items:center;
-margin:10px 0;
-padding:8px 0;
-border-bottom:1px solid #eee;
+margin:8px 0;
 }
 
-.switch{
-position:relative;
-width:46px;
-height:24px;
-display:inline-block;
-}
-
-.switch input{display:none;}
-
-.slider{
-position:absolute;
-top:0;left:0;right:0;bottom:0;
-background:#ccc;
-border-radius:30px;
-transition:.3s;
-}
-
-.slider:before{
-content:"";
-position:absolute;
-width:18px;height:18px;
-left:3px;bottom:3px;
-background:white;
-border-radius:50%;
-transition:.3s;
-}
-
-input:checked + .slider{
-background:#00bcd4;
-}
-
-input:checked + .slider:before{
-transform:translateX(22px);
-}
 </style>
 </head>
 
 <body>
 
-<header>HimikPro</header>
+<header onclick="goHome()">MirrorMaker</header>
 
-<div class="container">
+<div class="container" id="app"></div>
 
-<div class="card" id="shiftCard">
+<script>
+
+/* ---------- НАВИГАЦИЯ ---------- */
+
+function goHome(){
+renderHome();
+}
+
+/* ---------- ГЛАВНОЕ МЕНЮ ---------- */
+
+function renderHome(){
+app.innerHTML=`
+<div class="card"><button onclick="renderChemStart()">Химик</button></div>
+<div class="card"><button onclick="renderOperator()">Оператор загрузки/выгрузки</button></div>
+<div class="card"><button onclick="renderPaint()">Краска</button></div>
+<div class="card"><button onclick="renderSamples()">Образцы</button></div>
+<div class="card"><button onclick="renderLine()">Устройство линии</button></div>
+`;
+}
+
+/* ---------- ХИМИК ---------- */
+
+let shiftStart=0,shiftEnd=1440;
+
+function renderChemStart(){
+app.innerHTML=`
+<div class="card">
 <h3>Выбор смены</h3>
-
-<select id="shiftSelect">
-<option value="7-15">7:00 - 15:00</option>
-<option value="15-23">15:00 - 23:00</option>
-<option value="23-7">23:00 - 7:00</option>
-<option value="9-21">9:00 - 21:00</option>
-<option value="21-9">21:00 - 9:00</option>
+<select id="shift">
+<option value="23-7">23-7</option>
+<option value="21-9">21-9</option>
+<option value="7-15">7-15</option>
 </select>
+<button onclick="startChem()">Продолжить</button>
+</div>`;
+}
 
-<button onclick="setShift()">Сохранить смену</button>
-</div>
+function startChem(){
+let val=document.getElementById("shift").value;
+let map={"23-7":[23,7],"21-9":[21,9],"7-15":[7,15]};
+let s=map[val];
+shiftStart=s[0]*60;
+shiftEnd=s[1]*60;
+if(shiftEnd<=shiftStart) shiftEnd+=1440;
 
-<div id="app" style="display:none;">
+renderChem();
+}
 
+function fmt(m){
+m=((m%1440)+1440)%1440;
+return String(Math.floor(m/60)).padStart(2,'0')+":"+String(m%60).padStart(2,'0');
+}
+
+/* FIX ХИМИИ */
+function calcChem(start){
+if(start<shiftStart) start+=1440;
+
+let arr=[];
+for(let i=0;i<6;i++){
+let t=start+i*240;
+if(t>shiftEnd) break;
+arr.push(fmt(t)+" — Приготовить химию");
+}
+return arr.join("<br>");
+}
+
+function calcSilan(start){
+if(start<shiftStart) start+=1440;
+
+let arr=[];
+for(let i=0;i<20;i++){
+let t=start+i*180;
+if(t>shiftEnd) break;
+arr.push(fmt(t)+" — Приготовить силан");
+if(t+40<=shiftEnd){
+arr.push(fmt(t+40)+" — Зарядить силан");
+}
+}
+return arr.join("<br>");
+}
+
+function renderChem(){
+app.innerHTML=`
 <div class="card">
 <h3>Химия</h3>
-<input type="time" id="chemTime">
-<button onclick="setChem()">Рассчитать</button>
-<div id="chemResult"></div>
+<input type="time" id="chem">
+<button onclick="showChem()">Рассчитать</button>
+<div id="chemRes"></div>
 </div>
 
 <div class="card">
 <h3>Силан</h3>
-<input type="time" id="silanTime">
-<button onclick="setSilan()">Рассчитать</button>
-<div id="silanResult"></div>
+<input type="time" id="silan">
+<button onclick="showSilan()">Рассчитать</button>
+<div id="silanRes"></div>
 </div>
 
-<div class="card lunch">
-<h3>Обед</h3>
-<div id="lunchResult"></div>
+<div class="card">
+<h3>Возможное время для обеда</h3>
+<div id="lunch"></div>
 </div>
 
 <div class="card">
 <h3>Задачи</h3>
-
 <div id="tasks"></div>
-
-<input type="text" id="newTask" placeholder="Новая задача">
-<button onclick="addTask()">Добавить задачу</button>
-</div>
-
-<div class="card highlight">
-ВАЖНО: Готовить порошок и доливать серебро в течение всей смены!
+<input id="taskInput">
+<button onclick="addTask()">Добавить</button>
 </div>
 
 <div class="card">
-<button onclick="resetAll()">Новая смена</button>
+ВАЖНО: Готовить порошок и доливать серебро в течение всей смены! Следить за системой EnviroFalk и EnvoChem
 </div>
 
+<div class="card">
+<img src="k2.jpg">
 </div>
 
-<script>
-
-let shiftStart = 0;
-let shiftEnd = 1440;
-
-/* SHIFT */
-function setShift(){
-localStorage.setItem("shift", document.getElementById("shiftSelect").value);
-init();
+<div class="card">
+<button onclick="renderHome()">Новая смена</button>
+</div>
+`;
+loadTasks();
 }
 
-function loadShift(){
-
-const map={
-"7-15":[7,15],
-"15-23":[15,23],
-"23-7":[23,7],
-"9-21":[9,21],
-"21-9":[21,9]
-};
-
-let key = localStorage.getItem("shift");
-let s = map[key];
-
-if(!s){
-shiftStart = 0;
-shiftEnd = 1440;
-return;
+function showChem(){
+let v=document.getElementById("chem").value;
+if(!v)return;
+let [h,m]=v.split(":").map(Number);
+document.getElementById("chemRes").innerHTML=calcChem(h*60+m);
 }
 
-shiftStart = s[0]*60;
-shiftEnd = s[1]*60;
-
-if(shiftEnd <= shiftStart) shiftEnd += 1440;
+function showSilan(){
+let v=document.getElementById("silan").value;
+if(!v)return;
+let [h,m]=v.split(":").map(Number);
+document.getElementById("silanRes").innerHTML=calcSilan(h*60+m);
 }
 
-/* TIME */
-function fmt(h,m){
-return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
-}
+/* ---------- TASKS ---------- */
 
-function formatMin(min){
-min = ((min % 1440)+1440)%1440;
-return fmt(Math.floor(min/60)%24, min%60);
-}
-
-/* CHEM */
-function setChem(){
-
-let t=document.getElementById("chemTime").value;
-if(!t)return;
-
-let [h,m]=t.split(":").map(Number);
-let start=h*60+m;
-
-let arr=[];
-
-for(let i=0;i<6;i++){
-let t=start+i*240;
-if(t>shiftEnd)break;
-
-arr.push({
-time:formatMin(t),
-text:"Приготовить химию"
-});
-}
-
-localStorage.setItem("chem",JSON.stringify(arr));
-render();
-}
-
-/* SILAN */
-function setSilan(){
-
-let t=document.getElementById("silanTime").value;
-if(!t)return;
-
-let [h,m]=t.split(":").map(Number);
-let start=h*60+m;
-
-if(start < shiftStart){
-start += 1440;
-}
-
-let shiftLen = shiftEnd - shiftStart;
-
-let arr=[];
-
-for(let i=0;i<50;i++){
-
-let base = start + i*180;
-
-if(base > shiftStart + shiftLen) break;
-
-arr.push({
-time: formatMin(base),
-text: "Приготовить силан"
-});
-
-let charge = base + 40;
-
-if(charge <= shiftStart + shiftLen){
-arr.push({
-time: formatMin(charge),
-text: "Зарядить силан"
-});
-}
-}
-
-localStorage.setItem("silan",JSON.stringify(arr));
-render();
-}
-
-/* LUNCH */
-function lunch(){
-
-let ev=[];
-
-(JSON.parse(localStorage.getItem("chem")||"[]"))
-.forEach(e=>ev.push({s:toMin(e.time),e:toMin(e.time)+20}));
-
-(JSON.parse(localStorage.getItem("silan")||"[]"))
-.forEach(e=>{
-let d=e.text.includes("Приготовить")?10:5;
-ev.push({s:toMin(e.time),e:toMin(e.time)+d});
-});
-
-ev.sort((a,b)=>a.s-b.s);
-
-let gaps=[];
-
-for(let i=0;i<ev.length-1;i++){
-let g=ev[i+1].s-ev[i].e;
-if(g>=50){
-gaps.push({s:ev[i].e,e:ev[i+1].s});
-}
-}
-
-if(!gaps.length) return "Нет времени на обед";
-
-return gaps.slice(0,2).map(x=>
-`${formatMin(x.s)} — ${formatMin(x.e)}`
-).join("\n");
-}
-
-function toMin(t){
-let [h,m]=t.split(":").map(Number);
-return h*60+m;
-}
-
-/* TASKS */
 function loadTasks(){
-
-let t = JSON.parse(localStorage.getItem("tasks")||"null");
-
-if(!Array.isArray(t)){
-t=[
-{n:"Обед",d:false},
-{n:"Соль",d:false},
-{n:"Щелочь",d:false},
-{n:"Шлам",d:false}
-];
-localStorage.setItem("tasks",JSON.stringify(t));
-}
-
+let t=JSON.parse(localStorage.getItem("t")||"[]");
 document.getElementById("tasks").innerHTML=
 t.map((x,i)=>`
 <div class="task">
-<span>${x.n}</span>
-<label class="switch">
-<input type="checkbox" ${x.d?"checked":""} onchange="toggleTask(${i})">
-<span class="slider"></span>
-</label>
-</div>
-`).join("");
+<span>${x}</span>
+<button onclick="delTask(${i})">✔</button>
+</div>`).join("");
 }
 
 function addTask(){
-let v=document.getElementById("newTask").value;
-if(!v)return;
-
-let t=JSON.parse(localStorage.getItem("tasks")||"[]");
-t.push({n:v,d:false});
-
-localStorage.setItem("tasks",JSON.stringify(t));
-document.getElementById("newTask").value="";
+let v=document.getElementById("taskInput").value;
+let t=JSON.parse(localStorage.getItem("t")||"[]");
+t.push(v);
+localStorage.setItem("t",JSON.stringify(t));
 loadTasks();
 }
 
-function toggleTask(i){
-let t=JSON.parse(localStorage.getItem("tasks")||"[]");
-t[i].d=!t[i].d;
-localStorage.setItem("tasks",JSON.stringify(t));
+function delTask(i){
+let t=JSON.parse(localStorage.getItem("t"));
+t.splice(i,1);
+localStorage.setItem("t",JSON.stringify(t));
 loadTasks();
 }
 
-/* RESET */
-function resetAll(){
-localStorage.clear();
-init();
-}
+/* ---------- ОПЕРАТОР ---------- */
 
-/* RENDER */
-function render(){
+function renderOperator(){
+app.innerHTML=`
+<div class="card"><h3>Задачи</h3><div id="tasks"></div><input id="taskInput"><button onclick="addTask()">Добавить</button></div>
 
-document.getElementById("chemResult").innerHTML=
-(JSON.parse(localStorage.getItem("chem")||"[]"))
-.map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
-
-document.getElementById("silanResult").innerHTML=
-(JSON.parse(localStorage.getItem("silan")||"[]"))
-.map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
-
-document.getElementById("lunchResult").innerText=lunch();
-
+<div class="card">
+<button onclick="showMemo('robot')">Вывод робота в ручной режим</button>
+<button onclick="showMemo('load')">Загрузка</button>
+</div>`;
 loadTasks();
 }
 
-/* INIT */
-function init(){
-
-let shift = localStorage.getItem("shift");
-
-if(!shift){
-document.getElementById("shiftCard").style.display="block";
-document.getElementById("app").style.display="none";
-return;
+function showMemo(type){
+let text={
+robot:"Выбрать режим T1 > R > Аннулировать программу > Выбрать формат стекла",
+load:"Проверить ярлык\nНе брать брак\nЧастичный отбор"
+};
+app.innerHTML=`
+<div class="card">${text[type]}</div>
+<button onclick="renderOperator()">Назад</button>`;
 }
 
-loadShift();
+/* ---------- КРАСКА ---------- */
 
-document.getElementById("shiftCard").style.display="none";
-document.getElementById("app").style.display="block";
+function renderPaint(){
+app.innerHTML=`
+<div class="card"><h3>Задачи</h3><div id="tasks"></div><input id="taskInput"><button onclick="addTask()">Добавить</button></div>
 
-render();
+<div class="card">
+Миксер... (вся инструкция)
+</div>`;
+loadTasks();
 }
 
-init();
+/* ---------- ОБРАЗЦЫ ---------- */
+
+function renderSamples(){
+app.innerHTML=`<div class="card"><img src="k3.png"></div>`;
+}
+
+/* ---------- ЛИНИЯ ---------- */
+
+function renderLine(){
+app.innerHTML=`
+<div class="card"><img src="k1.png"></div>
+
+<div class="card">
+<div class="sectionTitle">Секция предварительной мойки</div>
+<div class="sectionText">Роликовая щетка и промывочная вода</div>
+</div>`;
+}
+
+/* ---------- START ---------- */
+
+renderHome();
 
 </script>
 
