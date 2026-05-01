@@ -242,12 +242,19 @@ localStorage.setItem("tasksChem",JSON.stringify(t));
 document.getElementById("tasks").innerHTML=
 t.map((x,i)=>`
 <div class="task">
-<span>${x.n}</span>
+
+<span>
+<span class="task-del" onclick="deleteTaskChem(${i})">✕</span>
+${x.n}
+</span>
+
 <label class="switch">
 <input type="checkbox" ${x.d?"checked":""} onchange="toggleTask(${i})">
 <span class="slider"></span>
 </label>
-</div>`).join("");
+
+</div>
+`).join("");
 }
 
 function addTask(){
