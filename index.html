@@ -109,6 +109,16 @@ background:#00bcd4;
 input:checked + .slider:before{
 transform:translateX(22px);
 }
+
+.section-title{
+font-weight:700;
+margin-top:10px;
+}
+
+.section-text{
+font-style:italic;
+margin-bottom:10px;
+}
 </style>
 </head>
 
@@ -119,7 +129,6 @@ transform:translateX(22px);
 
 <script>
 
-/* ---------- НАВИГАЦИЯ ---------- */
 function goHome(){renderHome();}
 
 /* ---------- ГЛАВНОЕ МЕНЮ ---------- */
@@ -133,7 +142,47 @@ app.innerHTML=`
 `;
 }
 
-/* ---------- СМЕНЫ ---------- */
+/* ---------- TASKS ---------- */
+function loadTasks(defaultTasks=[]){
+
+let t = JSON.parse(localStorage.getItem("tasks")||"null");
+
+if(!Array.isArray(t)){
+t=defaultTasks;
+localStorage.setItem("tasks",JSON.stringify(t));
+}
+
+document.getElementById("tasks").innerHTML=
+t.map((x,i)=>`
+<div class="task">
+<span>${x.n}</span>
+<label class="switch">
+<input type="checkbox" ${x.d?"checked":""} onchange="toggleTask(${i})">
+<span class="slider"></span>
+</label>
+</div>
+`).join("");
+}
+
+function addTask(){
+let v=document.getElementById("newTask").value;
+if(!v)return;
+
+let t=JSON.parse(localStorage.getItem("tasks")||"[]");
+t.push({n:v,d:false});
+localStorage.setItem("tasks",JSON.stringify(t));
+document.getElementById("newTask").value="";
+loadTasks();
+}
+
+function toggleTask(i){
+let t=JSON.parse(localStorage.getItem("tasks")||"[]");
+t[i].d=!t[i].d;
+localStorage.setItem("tasks",JSON.stringify(t));
+loadTasks();
+}
+
+/* ---------- ХИМИК ---------- */
 let shiftStart=0,shiftEnd=1440;
 
 function renderChemShift(){
@@ -170,25 +219,17 @@ if(shiftEnd<=shiftStart) shiftEnd+=1440;
 renderChem();
 }
 
-/* ---------- ВРЕМЯ ---------- */
 function fmt(min){
 min=((min%1440)+1440)%1440;
 return String(Math.floor(min/60)).padStart(2,'0')+":"+String(min%60).padStart(2,'0');
 }
 
-function toMin(t){
-let [h,m]=t.split(":").map(Number);
-return h*60+m;
-}
-
-/* ---------- ХИМИЯ FIX ---------- */
 function setChem(){
 let t=document.getElementById("chemTime").value;
 if(!t)return;
 
 let [h,m]=t.split(":").map(Number);
 let start=h*60+m;
-
 if(start<shiftStart) start+=1440;
 
 let arr=[];
@@ -202,14 +243,12 @@ localStorage.setItem("chem",JSON.stringify(arr));
 renderChemData();
 }
 
-/* ---------- СИЛАН ---------- */
 function setSilan(){
 let t=document.getElementById("silanTime").value;
 if(!t)return;
 
 let [h,m]=t.split(":").map(Number);
 let start=h*60+m;
-
 if(start<shiftStart) start+=1440;
 
 let arr=[];
@@ -225,11 +264,8 @@ localStorage.setItem("silan",JSON.stringify(arr));
 renderChemData();
 }
 
-/* ---------- ОБЕД (СТАБИЛЬНЫЙ) ---------- */
 function lunch(){
-
 let ev=[];
-
 (JSON.parse(localStorage.getItem("chem")||"[]"))
 .forEach(e=>ev.push({s:toMin(e.time),e:toMin(e.time)+20}));
 
@@ -242,67 +278,21 @@ ev.push({s:toMin(e.time),e:toMin(e.time)+d});
 ev.sort((a,b)=>a.s-b.s);
 
 let gaps=[];
-
 for(let i=0;i<ev.length-1;i++){
 let g=ev[i+1].s-ev[i].e;
-if(g>=50){
-gaps.push({s:ev[i].e,e:ev[i+1].s});
-}
+if(g>=50) gaps.push({s:ev[i].e,e:ev[i+1].s});
 }
 
 if(!gaps.length) return "Нет времени на обед";
 
-return gaps.slice(0,3).map(x=>
-`${fmt(x.s)} — ${fmt(x.e)}`
-).join("\n");
+return gaps.slice(0,3).map(x=>`${fmt(x.s)} — ${fmt(x.e)}`).join("\n");
 }
 
-/* ---------- ЗАДАЧИ ---------- */
-function loadTasks(){
-
-let t = JSON.parse(localStorage.getItem("tasks")||"null");
-
-if(!Array.isArray(t)){
-t=[
-{n:"Соль",d:false},
-{n:"Щелочь",d:false},
-{n:"Шлам",d:false}
-];
-localStorage.setItem("tasks",JSON.stringify(t));
+function toMin(t){
+let [h,m]=t.split(":").map(Number);
+return h*60+m;
 }
 
-document.getElementById("tasks").innerHTML=
-t.map((x,i)=>`
-<div class="task">
-<span>${x.n}</span>
-<label class="switch">
-<input type="checkbox" ${x.d?"checked":""} onchange="toggleTask(${i})">
-<span class="slider"></span>
-</label>
-</div>
-`).join("");
-}
-
-function addTask(){
-let v=document.getElementById("newTask").value;
-if(!v)return;
-
-let t=JSON.parse(localStorage.getItem("tasks")||"[]");
-t.push({n:v,d:false});
-
-localStorage.setItem("tasks",JSON.stringify(t));
-document.getElementById("newTask").value="";
-loadTasks();
-}
-
-function toggleTask(i){
-let t=JSON.parse(localStorage.getItem("tasks")||"[]");
-t[i].d=!t[i].d;
-localStorage.setItem("tasks",JSON.stringify(t));
-loadTasks();
-}
-
-/* ---------- РЕНДЕР ХИМИКА ---------- */
 function renderChem(){
 app.innerHTML=`
 <div class="card">
@@ -345,7 +335,11 @@ app.innerHTML=`
 `;
 
 renderChemData();
-loadTasks();
+loadTasks([
+{n:"Соль",d:false},
+{n:"Щелочь",d:false},
+{n:"Шлам",d:false}
+]);
 }
 
 function renderChemData(){
@@ -363,6 +357,7 @@ document.getElementById("lunchResult").innerText=lunch();
 /* ---------- ОПЕРАТОР ---------- */
 function renderOperator(){
 app.innerHTML=`
+
 <div class="card">
 <h3>Задачи</h3>
 <div id="tasks"></div>
@@ -371,22 +366,29 @@ app.innerHTML=`
 </div>
 
 <div class="card highlight">
+<b>Вывод робота в ручной режим</b>
 Выбрать режим “T1” > R > Аннулировать программу > Выбрать формат стекла / Готово
 </div>
 
 <div class="card highlight">
-на стопе должен быть прикреплен ярлык с информацией о количестве листов, номере смены, даты изготовления, с штампом ОТК
+<b>На стопе должен быть прикреплен ярлык с информацией о количестве листов, номере смены, даты изготовления, с штампом ОТК</b>
 не брать в работу стекло несоответствующего качества
 производить частичный отбор стекла, при этом стекло несоответствующего качества перерезать на оборудование загрузки
 </div>
+
+<div class="card highlight">
+<b>Инструкция по роботу загрузки если встанет с двойным стеклом</b>
+Переводите в ручной режим, в программе ищете строчку 157, выбираете «block selection», далее по оси Y отводите робота вместе с одним стеклом подальше от стопы, далее ищете строчку 5, нажимаете «block selection», выполняете, робот встаёт в домашнюю позицию с одним стеклом, далее ищете строчку 103, нажимаете «block selection», он переворачивается с одним стеклом, далее вручную ставите в стопу оставшееся стекло, нажимаете на присоску, чтобы сбросить. При необходимости заходите и двигаете стекло в стопе. Далее ищете строчку 5, нажимаете «block selection», робот выходит на домашнюю позицию, переводите в авто режим, запускаете.
+</div>
 `;
 
-loadTasks();
+loadTasks([]);
 }
 
 /* ---------- КРАСКА ---------- */
 function renderPaint(){
 app.innerHTML=`
+
 <div class="card">
 <h3>Задачи</h3>
 <div id="tasks"></div>
@@ -395,6 +397,7 @@ app.innerHTML=`
 </div>
 
 <div class="card highlight">
+<b>Инструкция по приготовлению краски</b>
 Миксер на 2 часа на 25Гц
 Измерить вязкость, добавить ксилол
 Миксер на 1,5 часа на 20Гц
@@ -412,7 +415,7 @@ app.innerHTML=`
 </div>
 `;
 
-loadTasks();
+loadTasks([]);
 }
 
 /* ---------- ОБРАЗЦЫ ---------- */
@@ -425,70 +428,21 @@ function renderLine(){
 app.innerHTML=`
 <div class="card"><img src="k1.jpg"></div>
 
-<div class="card highlight">
-Секция предварительной мойки
-Роликовая щетка и промывочная вода
+<div class="card">
+<div class="section-title">Секция предварительной мойки</div>
+<div class="section-text">Роликовая щетка и промывочная вода</div>
 
-Секция полировки и промывки
-Полировочные щетки на транспортных рамах, смоченные полировочной суспензией
+<div class="section-title">Секция полировки и промывки</div>
+<div class="section-text">Полировочные щетки на транспортных рамах, смоченные полировочной суспензией</div>
 
-Секция моечной машины
-Три моечные камеры, в первой щетки снизу и сверху, в остальных сверху
+<div class="section-title">Секция моечной машины</div>
+<div class="section-text">Три моечные камеры, в первой щетки снизу и сверху, в остальных сверху</div>
 
-Секция сенсибилизации
-Сенсибилизатор для обеспечения сцепления серебра с поверхностью стекла
+<div class="section-title">Секция сенсибилизации</div>
+<div class="section-text">Сенсибилизатор для обеспечения сцепления серебра с поверхностью стекла</div>
 
-Секция активации
-Раствор палладия формирует центры кристаллизации осаждаемого серебра. Так же обработка раствором палладия повышает антикоррозионные свойства зеркала
-
-Секция серебрения
-Раствор серебра и восстановителя распыляются с помощью подвижной траверсы
-
-Секция пассивации
-Раствор пассиватора на основе дихлорида олова прекращает химическую реакцию серебряного зеркала и защищает серебряный слой от негативного воздействии компонентов ЛКП
-
-Секция распыления раствора силана 
-Силан служит для создания адгезии ЛКП к металлическим слоям
-
-Секция обдувки
-С помощью вентилятора высокого давления производится обдув для удаления воды с поверхности стекла
-
-Секция сушки
-77°С
-
-Секция охлаждения
-50°С
-
-Мост 
-Визуальный осмотр качества зеркала
-
-Секция нанесения базового слоя ЛКП
-
-Секция сушки
-60-110-110 (печь не более 150°С)
-
-Секция охлаждения 
-50°С
-
-Секция нанесения верхнего слоя ЛКП
-
-Секция сушки
-60-125-170-175-155 (печь не более 200°С)
-
-Секция охлаждения
-35°С
-
-Секция водяного охлаждения
-Разбрызгивается вода, охлаждая лист до температуры окружающий среды
-
-Секция окончательной мойки
-Очистка нижней стороны от химических загрязнений с помощью хлорида железа
-Далее зеркало перемещается в моечную машину, щетки снизу.
-После окончательной мойки с помощью специальных воздушных ножей с поверхности удаляются остатки воды
-
-Отчистные
-Сточные воды серебра и палладия очищаются в отдельных блоках очистки путем многослойной фильтрации
-Сточные воды, загрязненные соединениями олова и железа, очищаются путем коагуляции, нейтрализации, флокуляции воды
+<div class="section-title">Секция активации</div>
+<div class="section-text">Раствор палладия формирует центры кристаллизации осаждаемого серебра...</div>
 </div>
 `;
 }
