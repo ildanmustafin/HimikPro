@@ -109,16 +109,6 @@ background:#00bcd4;
 input:checked + .slider:before{
 transform:translateX(22px);
 }
-
-.section-title{
-font-weight:700;
-margin-top:10px;
-}
-
-.section-text{
-font-style:italic;
-margin-bottom:10px;
-}
 </style>
 </head>
 
@@ -129,6 +119,7 @@ margin-bottom:10px;
 
 <script>
 
+/* ---------- НАВИГАЦИЯ ---------- */
 function goHome(){renderHome();}
 
 /* ---------- ГЛАВНОЕ МЕНЮ ---------- */
@@ -219,122 +210,17 @@ if(shiftEnd<=shiftStart) shiftEnd+=1440;
 renderChem();
 }
 
-function fmt(min){
-min=((min%1440)+1440)%1440;
-return String(Math.floor(min/60)).padStart(2,'0')+":"+String(min%60).padStart(2,'0');
-}
-
-function setChem(){
-let t=document.getElementById("chemTime").value;
-if(!t)return;
-
-let [h,m]=t.split(":").map(Number);
-let start=h*60+m;
-if(start<shiftStart) start+=1440;
-
-let arr=[];
-for(let i=0;i<6;i++){
-let time=start+i*240;
-if(time>shiftEnd) break;
-arr.push({time:fmt(time),text:"Приготовить химию"});
-}
-
-localStorage.setItem("chem",JSON.stringify(arr));
-renderChemData();
-}
-
-function setSilan(){
-let t=document.getElementById("silanTime").value;
-if(!t)return;
-
-let [h,m]=t.split(":").map(Number);
-let start=h*60+m;
-if(start<shiftStart) start+=1440;
-
-let arr=[];
-for(let i=0;i<10;i++){
-let base=start+i*180;
-if(base>shiftEnd) break;
-
-arr.push({time:fmt(base),text:"Приготовить силан"});
-arr.push({time:fmt(base+40),text:"Зарядить силан"});
-}
-
-localStorage.setItem("silan",JSON.stringify(arr));
-renderChemData();
-}
-
-function lunch(){
-let ev=[];
-(JSON.parse(localStorage.getItem("chem")||"[]"))
-.forEach(e=>ev.push({s:toMin(e.time),e:toMin(e.time)+20}));
-
-(JSON.parse(localStorage.getItem("silan")||"[]"))
-.forEach(e=>{
-let d=e.text.includes("Приготовить")?10:5;
-ev.push({s:toMin(e.time),e:toMin(e.time)+d});
-});
-
-ev.sort((a,b)=>a.s-b.s);
-
-let gaps=[];
-for(let i=0;i<ev.length-1;i++){
-let g=ev[i+1].s-ev[i].e;
-if(g>=50) gaps.push({s:ev[i].e,e:ev[i+1].s});
-}
-
-if(!gaps.length) return "Нет времени на обед";
-
-return gaps.slice(0,3).map(x=>`${fmt(x.s)} — ${fmt(x.e)}`).join("\n");
-}
-
-function toMin(t){
-let [h,m]=t.split(":").map(Number);
-return h*60+m;
-}
-
+/* ---------- РЕНДЕР ХИМИКА ---------- */
 function renderChem(){
 app.innerHTML=`
-<div class="card">
-<h3>Химия</h3>
-<input type="time" id="chemTime">
-<button onclick="setChem()">Рассчитать</button>
-<div id="chemResult"></div>
-</div>
-
-<div class="card">
-<h3>Силан</h3>
-<input type="time" id="silanTime">
-<button onclick="setSilan()">Рассчитать</button>
-<div id="silanResult"></div>
-</div>
-
-<div class="card lunch">
-<h3>Возможное время для обеда</h3>
-<div id="lunchResult"></div>
-</div>
-
 <div class="card">
 <h3>Задачи</h3>
 <div id="tasks"></div>
 <input type="text" id="newTask" placeholder="Новая задача">
 <button onclick="addTask()">Добавить задачу</button>
 </div>
-
-<div class="card highlight">
-ВАЖНО: Готовить порошок и доливать серебро в течение всей смены! Следить за системой EnviroFalk и EnvoChem
-</div>
-
-<div class="card">
-<img src="k2.jpg">
-</div>
-
-<div class="card">
-<button onclick="renderChemShift()">Новая смена</button>
-</div>
 `;
 
-renderChemData();
 loadTasks([
 {n:"Соль",d:false},
 {n:"Щелочь",d:false},
@@ -342,76 +228,32 @@ loadTasks([
 ]);
 }
 
-function renderChemData(){
-document.getElementById("chemResult").innerHTML=
-(JSON.parse(localStorage.getItem("chem")||"[]"))
-.map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
-
-document.getElementById("silanResult").innerHTML=
-(JSON.parse(localStorage.getItem("silan")||"[]"))
-.map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
-
-document.getElementById("lunchResult").innerText=lunch();
-}
-
 /* ---------- ОПЕРАТОР ---------- */
 function renderOperator(){
-app.innerHTML=`
+localStorage.removeItem("tasks"); // убираем базовые задачи
 
+app.innerHTML=`
 <div class="card">
 <h3>Задачи</h3>
 <div id="tasks"></div>
 <input type="text" id="newTask" placeholder="Новая задача">
 <button onclick="addTask()">Добавить задачу</button>
 </div>
-
-<div class="card highlight">
-<b>Вывод робота в ручной режим</b>
-Выбрать режим “T1” > R > Аннулировать программу > Выбрать формат стекла / Готово
-</div>
-
-<div class="card highlight">
-<b>На стопе должен быть прикреплен ярлык с информацией о количестве листов, номере смены, даты изготовления, с штампом ОТК</b>
-не брать в работу стекло несоответствующего качества
-производить частичный отбор стекла, при этом стекло несоответствующего качества перерезать на оборудование загрузки
-</div>
-
-<div class="card highlight">
-<b>Инструкция по роботу загрузки если встанет с двойным стеклом</b>
-Переводите в ручной режим, в программе ищете строчку 157, выбираете «block selection», далее по оси Y отводите робота вместе с одним стеклом подальше от стопы, далее ищете строчку 5, нажимаете «block selection», выполняете, робот встаёт в домашнюю позицию с одним стеклом, далее ищете строчку 103, нажимаете «block selection», он переворачивается с одним стеклом, далее вручную ставите в стопу оставшееся стекло, нажимаете на присоску, чтобы сбросить. При необходимости заходите и двигаете стекло в стопе. Далее ищете строчку 5, нажимаете «block selection», робот выходит на домашнюю позицию, переводите в авто режим, запускаете.
-</div>
 `;
 
-loadTasks([]);
+loadTasks([]); // только новые
 }
 
 /* ---------- КРАСКА ---------- */
 function renderPaint(){
-app.innerHTML=`
+localStorage.removeItem("tasks");
 
+app.innerHTML=`
 <div class="card">
 <h3>Задачи</h3>
 <div id="tasks"></div>
 <input type="text" id="newTask" placeholder="Новая задача">
 <button onclick="addTask()">Добавить задачу</button>
-</div>
-
-<div class="card highlight">
-<b>Инструкция по приготовлению краски</b>
-Миксер на 2 часа на 25Гц
-Измерить вязкость, добавить ксилол
-Миксер на 1,5 часа на 20Гц
-Измерить вязкость, добавить ксилол
-Миксер на 1,5 часа на 20Гц
-Измерить вязкость, добавить ксилол
-Миксера 1,5 часа на 15Гц
-Измерить вязкость
-Миксер на 2 часа на 10Гц
-Вязкость должна быть 40-45
-</div>
-
-<div class="card highlight">
-Утренняя смена начинает готовить краску, дневная доготавливает, вечерняя разливает ксилол по канистрам
 </div>
 `;
 
@@ -425,26 +267,7 @@ app.innerHTML=`<div class="card"><img src="k3.jpg"></div>`;
 
 /* ---------- ЛИНИЯ ---------- */
 function renderLine(){
-app.innerHTML=`
-<div class="card"><img src="k1.jpg"></div>
-
-<div class="card">
-<div class="section-title">Секция предварительной мойки</div>
-<div class="section-text">Роликовая щетка и промывочная вода</div>
-
-<div class="section-title">Секция полировки и промывки</div>
-<div class="section-text">Полировочные щетки на транспортных рамах, смоченные полировочной суспензией</div>
-
-<div class="section-title">Секция моечной машины</div>
-<div class="section-text">Три моечные камеры, в первой щетки снизу и сверху, в остальных сверху</div>
-
-<div class="section-title">Секция сенсибилизации</div>
-<div class="section-text">Сенсибилизатор для обеспечения сцепления серебра с поверхностью стекла</div>
-
-<div class="section-title">Секция активации</div>
-<div class="section-text">Раствор палладия формирует центры кристаллизации осаждаемого серебра...</div>
-</div>
-`;
+app.innerHTML=`<div class="card"><img src="k1.jpg"></div>`;
 }
 
 /* ---------- START ---------- */
