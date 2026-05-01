@@ -210,28 +210,6 @@ localStorage.setItem("silan",JSON.stringify(arr));
 renderChemData();
 }
 
-function lunch(){
-let ev=[];
-(JSON.parse(localStorage.getItem("chem")||"[]"))
-.forEach(e=>ev.push({s:toMin(e.time),e:toMin(e.time)+20}));
-(JSON.parse(localStorage.getItem("silan")||"[]"))
-.forEach(e=>{
-let d=e.text.includes("Приготовить")?10:5;
-ev.push({s:toMin(e.time),e:toMin(e.time)+d});
-});
-
-ev.sort((a,b)=>a.s-b.s);
-
-let gaps=[];
-for(let i=0;i<ev.length-1;i++){
-let g=ev[i+1].s-ev[i].e;
-if(g>=50) gaps.push({s:ev[i].e,e:ev[i+1].s});
-}
-
-if(!gaps.length) return "Нет времени на обед";
-return gaps.slice(0,3).map(x=>`${fmt(x.s)} — ${fmt(x.e)}`).join("\n");
-}
-
 function loadTasks(){
 let t=JSON.parse(localStorage.getItem("tasksChem")||"null");
 if(!Array.isArray(t)){
@@ -297,11 +275,6 @@ app.innerHTML=`
 <div id="silanResult"></div>
 </div>
 
-<div class="card lunch">
-<h3>Возможное время для обеда</h3>
-<div id="lunchResult"></div>
-</div>
-
 <div class="card">
 <h3>Задачи</h3>
 <div id="tasks"></div>
@@ -310,7 +283,7 @@ app.innerHTML=`
 </div>
 
 <div class="card highlight">
-ВАЖНО: Готовить порошок и доливать серебро в течение всей смены! Следить за системой EnviroFalk и EnvoChem
+<strong>ВАЖНО:</strong> Готовить порошок и доливать серебро в течение всей смены! Следить за системой EnviroFalk и EnvoChem!
 </div>
 
 <div class="card"><img src="k2.jpg"></div>
@@ -333,7 +306,6 @@ document.getElementById("silanResult").innerHTML=
 (JSON.parse(localStorage.getItem("silan")||"[]"))
 .map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
 
-document.getElementById("lunchResult").innerText=lunch();
 }
 
 function renderOperator(){
