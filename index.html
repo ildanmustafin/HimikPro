@@ -257,6 +257,13 @@ ${x.n}
 `).join("");
 }
 
+function deleteTaskChem(i){
+let t=JSON.parse(localStorage.getItem("tasksChem")||"[]");
+t.splice(i,1);
+localStorage.setItem("tasksChem",JSON.stringify(t));
+loadTasks();
+}
+
 function addTask(){
 let v=document.getElementById("newTask").value;
 if(!v)return;
@@ -400,13 +407,26 @@ let t = JSON.parse(localStorage.getItem("tasksOperator")||"[]");
 document.getElementById("tasks").innerHTML=
 t.map((x,i)=>`
 <div class="task">
-<span>${x.n}</span>
+
+<span>
+<span class="task-del" onclick="deleteTaskOperator(${i})">✕</span>
+${x.n}
+</span>
+
 <label class="switch">
 <input type="checkbox" ${x.d?"checked":""} onchange="toggleTaskOperator(${i})">
 <span class="slider"></span>
 </label>
+
 </div>
 `).join("");
+}
+
+function deleteTaskOperator(i){
+let t=JSON.parse(localStorage.getItem("tasksOperator")||"[]");
+t.splice(i,1);
+localStorage.setItem("tasksOperator",JSON.stringify(t));
+loadTasksOperator();
 }
 
 function addTaskOperator(){
@@ -434,13 +454,26 @@ let t = JSON.parse(localStorage.getItem("tasksPaint")||"[]");
 document.getElementById("tasks").innerHTML=
 t.map((x,i)=>`
 <div class="task">
-<span>${x.n}</span>
+
+<span>
+<span class="task-del" onclick="deleteTaskPaint(${i})">✕</span>
+${x.n}
+</span>
+
 <label class="switch">
 <input type="checkbox" ${x.d?"checked":""} onchange="toggleTaskPaint(${i})">
 <span class="slider"></span>
 </label>
+
 </div>
 `).join("");
+}
+
+function deleteTaskPaint(i){
+let t=JSON.parse(localStorage.getItem("tasksPaint")||"[]");
+t.splice(i,1);
+localStorage.setItem("tasksPaint",JSON.stringify(t));
+loadTasksPaint();
 }
 
 function addTaskPaint(){
