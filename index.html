@@ -374,6 +374,74 @@ function renderLine(){
 app.innerHTML=`<div class="card"><img src="k1.jpg"></div>`;
 }
 
+function loadTasksOperator(){
+let t = JSON.parse(localStorage.getItem("tasksOperator")||"[]");
+
+document.getElementById("tasks").innerHTML=
+t.map((x,i)=>`
+<div class="task">
+<span>${x.n}</span>
+<label class="switch">
+<input type="checkbox" ${x.d?"checked":""} onchange="toggleTaskOperator(${i})">
+<span class="slider"></span>
+</label>
+</div>
+`).join("");
+}
+
+function addTaskOperator(){
+let v=document.getElementById("newTask").value;
+if(!v)return;
+
+let t=JSON.parse(localStorage.getItem("tasksOperator")||"[]");
+t.push({n:v,d:false});
+
+localStorage.setItem("tasksOperator",JSON.stringify(t));
+document.getElementById("newTask").value="";
+loadTasksOperator();
+}
+
+function toggleTaskOperator(i){
+let t=JSON.parse(localStorage.getItem("tasksOperator")||"[]");
+t[i].d=!t[i].d;
+localStorage.setItem("tasksOperator",JSON.stringify(t));
+loadTasksOperator();
+}
+
+function loadTasksPaint(){
+let t = JSON.parse(localStorage.getItem("tasksPaint")||"[]");
+
+document.getElementById("tasks").innerHTML=
+t.map((x,i)=>`
+<div class="task">
+<span>${x.n}</span>
+<label class="switch">
+<input type="checkbox" ${x.d?"checked":""} onchange="toggleTaskPaint(${i})">
+<span class="slider"></span>
+</label>
+</div>
+`).join("");
+}
+
+function addTaskPaint(){
+let v=document.getElementById("newTask").value;
+if(!v)return;
+
+let t=JSON.parse(localStorage.getItem("tasksPaint")||"[]");
+t.push({n:v,d:false});
+
+localStorage.setItem("tasksPaint",JSON.stringify(t));
+document.getElementById("newTask").value="";
+loadTasksPaint();
+}
+
+function toggleTaskPaint(i){
+let t=JSON.parse(localStorage.getItem("tasksPaint")||"[]");
+t[i].d=!t[i].d;
+localStorage.setItem("tasksPaint",JSON.stringify(t));
+loadTasksPaint();
+}
+
 renderHome();
 
 </script>
