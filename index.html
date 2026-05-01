@@ -56,7 +56,6 @@ border-bottom:1px solid #eee;
 .highlight{
 background:#e0f7fa;
 border-left:5px solid #00bcd4;
-font-weight:600;
 white-space:pre-line;
 }
 
@@ -77,12 +76,7 @@ padding:8px 0;
 border-bottom:1px solid #eee;
 }
 
-.switch{
-position:relative;
-width:46px;
-height:24px;
-}
-
+.switch{position:relative;width:46px;height:24px;}
 .switch input{display:none;}
 
 .slider{
@@ -102,13 +96,8 @@ border-radius:50%;
 transition:.3s;
 }
 
-input:checked + .slider{
-background:#00bcd4;
-}
-
-input:checked + .slider:before{
-transform:translateX(22px);
-}
+input:checked + .slider{background:#00bcd4;}
+input:checked + .slider:before{transform:translateX(22px);}
 </style>
 </head>
 
@@ -119,10 +108,10 @@ transform:translateX(22px);
 
 <script>
 
-/* ---------- НАВИГАЦИЯ ---------- */
+let taskKey="tasksChem";
+
 function goHome(){renderHome();}
 
-/* ---------- ГЛАВНОЕ МЕНЮ ---------- */
 function renderHome(){
 app.innerHTML=`
 <div class="card"><button onclick="renderChemShift()">Химик</button></div>
@@ -134,13 +123,21 @@ app.innerHTML=`
 }
 
 /* ---------- TASKS ---------- */
-function loadTasks(defaultTasks=[]){
+function loadTasks(){
 
-let t = JSON.parse(localStorage.getItem("tasks")||"null");
+let t = JSON.parse(localStorage.getItem(taskKey)||"null");
 
 if(!Array.isArray(t)){
-t=defaultTasks;
-localStorage.setItem("tasks",JSON.stringify(t));
+if(taskKey==="tasksChem"){
+t=[
+{n:"Соль",d:false},
+{n:"Щелочь",d:false},
+{n:"Шлам",d:false}
+];
+}else{
+t=[];
+}
+localStorage.setItem(taskKey,JSON.stringify(t));
 }
 
 document.getElementById("tasks").innerHTML=
@@ -159,23 +156,21 @@ function addTask(){
 let v=document.getElementById("newTask").value;
 if(!v)return;
 
-let t=JSON.parse(localStorage.getItem("tasks")||"[]");
+let t=JSON.parse(localStorage.getItem(taskKey)||"[]");
 t.push({n:v,d:false});
-localStorage.setItem("tasks",JSON.stringify(t));
+localStorage.setItem(taskKey,JSON.stringify(t));
 document.getElementById("newTask").value="";
 loadTasks();
 }
 
 function toggleTask(i){
-let t=JSON.parse(localStorage.getItem("tasks")||"[]");
+let t=JSON.parse(localStorage.getItem(taskKey)||"[]");
 t[i].d=!t[i].d;
-localStorage.setItem("tasks",JSON.stringify(t));
+localStorage.setItem(taskKey,JSON.stringify(t));
 loadTasks();
 }
 
 /* ---------- ХИМИК ---------- */
-let shiftStart=0,shiftEnd=1440;
-
 function renderChemShift(){
 app.innerHTML=`
 <div class="card">
@@ -187,31 +182,13 @@ app.innerHTML=`
 <option value="9-21">09:00 - 21:00</option>
 <option value="21-9">21:00 - 09:00</option>
 </select>
-<button onclick="startChem()">Сохранить смену</button>
+<button onclick="renderChem()">Сохранить смену</button>
 </div>`;
 }
 
-function startChem(){
-let map={
-"7-15":[7,15],
-"15-23":[15,23],
-"23-7":[23,7],
-"9-21":[9,21],
-"21-9":[21,9]
-};
-
-let val=document.getElementById("shift").value;
-let s=map[val];
-
-shiftStart=s[0]*60;
-shiftEnd=s[1]*60;
-if(shiftEnd<=shiftStart) shiftEnd+=1440;
-
-renderChem();
-}
-
-/* ---------- РЕНДЕР ХИМИКА ---------- */
 function renderChem(){
+taskKey="tasksChem";
+
 app.innerHTML=`
 <div class="card">
 <h3>Задачи</h3>
@@ -221,16 +198,12 @@ app.innerHTML=`
 </div>
 `;
 
-loadTasks([
-{n:"Соль",d:false},
-{n:"Щелочь",d:false},
-{n:"Шлам",d:false}
-]);
+loadTasks();
 }
 
 /* ---------- ОПЕРАТОР ---------- */
 function renderOperator(){
-localStorage.removeItem("tasks"); // убираем базовые задачи
+taskKey="tasksOperator";
 
 app.innerHTML=`
 <div class="card">
@@ -239,14 +212,29 @@ app.innerHTML=`
 <input type="text" id="newTask" placeholder="Новая задача">
 <button onclick="addTask()">Добавить задачу</button>
 </div>
+
+<div class="card highlight">
+<b>Вывод робота в ручной режим</b>
+Выбрать режим “T1” > R > Аннулировать программу > Выбрать формат стекла / Готово
+</div>
+
+<div class="card highlight">
+На стопе должен быть прикреплен ярлык с информацией о количестве листов, номере смены, даты изготовления, с штампом ОТК
+</div>
+
+<div class="card highlight">
+<b>Инструкция по роботу загрузки если встанет с двойным стеклом</b>
+Переводите в ручной режим, в программе ищете строчку
+157, выбираете «block selection», далее по оси Y отводите робота вместе с одним стеклом подальше от стопы, далее ищете строчку 5, нажимаете «block selection», выполняете, робот встаёт в домашнюю позицию с одним стеклом, далее ищете строчку 103, нажимаете «block selection», он переворачивается с одним стеклом, далее вручную ставите в стопу оставшееся стекло, нажимаете на присоску, чтобы сбросить. При необходимости заходите и двигаете стекло в стопе. Далее ищете строчку 5, нажимаете «block selection», робот выходит на домашнюю позицию, переводите в авто режим, запускаете.
+</div>
 `;
 
-loadTasks([]); // только новые
+loadTasks();
 }
 
 /* ---------- КРАСКА ---------- */
 function renderPaint(){
-localStorage.removeItem("tasks");
+taskKey="tasksPaint";
 
 app.innerHTML=`
 <div class="card">
@@ -255,9 +243,23 @@ app.innerHTML=`
 <input type="text" id="newTask" placeholder="Новая задача">
 <button onclick="addTask()">Добавить задачу</button>
 </div>
+
+<div class="card highlight">
+<b>Инструкция по приготовлению краски</b>
+Миксер на 2 часа на 25Гц
+Измерить вязкость, добавить ксилол
+Миксер на 1,5 часа на 20Гц
+Измерить вязкость, добавить ксилол
+Миксер на 1,5 часа на 20Гц
+Измерить вязкость, добавить ксилол
+Миксера 1,5 часа на 15Гц
+Измерить вязкость
+Миксер на 2 часа на 10Гц
+Вязкость должна быть 40-45
+</div>
 `;
 
-loadTasks([]);
+loadTasks();
 }
 
 /* ---------- ОБРАЗЦЫ ---------- */
@@ -270,7 +272,6 @@ function renderLine(){
 app.innerHTML=`<div class="card"><img src="k1.jpg"></div>`;
 }
 
-/* ---------- START ---------- */
 renderHome();
 
 </script>
