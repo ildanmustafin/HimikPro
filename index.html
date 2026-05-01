@@ -7,6 +7,7 @@
 
 <style>
 body{margin:0;font-family:-apple-system;background:#f3fbff;}
+
 header{
 background:linear-gradient(135deg,#00bcd4,#007c91);
 color:white;
@@ -17,7 +18,7 @@ font-weight:700;
 cursor:pointer;
 }
 
-.container{padding:15px;max-width:600px;margin:auto;}
+.container{padding:15px;}
 
 .card{
 background:white;
@@ -47,49 +48,84 @@ margin-top:10px;
 box-sizing:border-box;
 }
 
-img{width:100%;border-radius:12px;margin-top:10px;}
-
-.sectionTitle{
-font-weight:700;
-border:2px solid #00bcd4;
+.event{
 padding:6px;
-border-radius:8px;
-margin-top:10px;
+border-bottom:1px solid #eee;
 }
 
-.sectionText{
-font-style:italic;
-margin-bottom:10px;
+.highlight{
+background:#e0f7fa;
+border-left:5px solid #00bcd4;
+font-weight:600;
+white-space:pre-line;
 }
+
+.lunch{
+background:#e8f5e9;
+border-left:5px solid #4caf50;
+white-space:pre-line;
+}
+
+img{width:100%;border-radius:12px;margin-top:10px;}
 
 .task{
 display:flex;
 justify-content:space-between;
-margin:8px 0;
+align-items:center;
+margin:10px 0;
+padding:8px 0;
+border-bottom:1px solid #eee;
 }
 
+.switch{
+position:relative;
+width:46px;
+height:24px;
+}
+
+.switch input{display:none;}
+
+.slider{
+position:absolute;
+top:0;left:0;right:0;bottom:0;
+background:#ccc;
+border-radius:30px;
+}
+
+.slider:before{
+content:"";
+position:absolute;
+width:18px;height:18px;
+left:3px;bottom:3px;
+background:white;
+border-radius:50%;
+transition:.3s;
+}
+
+input:checked + .slider{
+background:#00bcd4;
+}
+
+input:checked + .slider:before{
+transform:translateX(22px);
+}
 </style>
 </head>
 
 <body>
 
 <header onclick="goHome()">MirrorMaker</header>
-
 <div class="container" id="app"></div>
 
 <script>
 
 /* ---------- НАВИГАЦИЯ ---------- */
-
-function goHome(){
-renderHome();
-}
+function goHome(){renderHome();}
 
 /* ---------- ГЛАВНОЕ МЕНЮ ---------- */
-
 function renderHome(){
 app.innerHTML=`
-<div class="card"><button onclick="renderChemStart()">Химик</button></div>
+<div class="card"><button onclick="renderChemShift()">Химик</button></div>
 <div class="card"><button onclick="renderOperator()">Оператор загрузки/выгрузки</button></div>
 <div class="card"><button onclick="renderPaint()">Краска</button></div>
 <div class="card"><button onclick="renderSamples()">Образцы</button></div>
@@ -97,27 +133,36 @@ app.innerHTML=`
 `;
 }
 
-/* ---------- ХИМИК ---------- */
-
+/* ---------- СМЕНЫ ---------- */
 let shiftStart=0,shiftEnd=1440;
 
-function renderChemStart(){
+function renderChemShift(){
 app.innerHTML=`
 <div class="card">
 <h3>Выбор смены</h3>
 <select id="shift">
-<option value="23-7">23-7</option>
-<option value="21-9">21-9</option>
-<option value="7-15">7-15</option>
+<option value="7-15">07:00 - 15:00</option>
+<option value="15-23">15:00 - 23:00</option>
+<option value="23-7">23:00 - 07:00</option>
+<option value="9-21">09:00 - 21:00</option>
+<option value="21-9">21:00 - 09:00</option>
 </select>
-<button onclick="startChem()">Продолжить</button>
+<button onclick="startChem()">Сохранить смену</button>
 </div>`;
 }
 
 function startChem(){
+let map={
+"7-15":[7,15],
+"15-23":[15,23],
+"23-7":[23,7],
+"9-21":[9,21],
+"21-9":[21,9]
+};
+
 let val=document.getElementById("shift").value;
-let map={"23-7":[23,7],"21-9":[21,9],"7-15":[7,15]};
 let s=map[val];
+
 shiftStart=s[0]*60;
 shiftEnd=s[1]*60;
 if(shiftEnd<=shiftStart) shiftEnd+=1440;
@@ -125,68 +170,168 @@ if(shiftEnd<=shiftStart) shiftEnd+=1440;
 renderChem();
 }
 
-function fmt(m){
-m=((m%1440)+1440)%1440;
-return String(Math.floor(m/60)).padStart(2,'0')+":"+String(m%60).padStart(2,'0');
+/* ---------- ВРЕМЯ ---------- */
+function fmt(min){
+min=((min%1440)+1440)%1440;
+return String(Math.floor(min/60)).padStart(2,'0')+":"+String(min%60).padStart(2,'0');
 }
 
-/* FIX ХИМИИ */
-function calcChem(start){
+function toMin(t){
+let [h,m]=t.split(":").map(Number);
+return h*60+m;
+}
+
+/* ---------- ХИМИЯ FIX ---------- */
+function setChem(){
+let t=document.getElementById("chemTime").value;
+if(!t)return;
+
+let [h,m]=t.split(":").map(Number);
+let start=h*60+m;
+
 if(start<shiftStart) start+=1440;
 
 let arr=[];
 for(let i=0;i<6;i++){
-let t=start+i*240;
-if(t>shiftEnd) break;
-arr.push(fmt(t)+" — Приготовить химию");
-}
-return arr.join("<br>");
+let time=start+i*240;
+if(time>shiftEnd) break;
+arr.push({time:fmt(time),text:"Приготовить химию"});
 }
 
-function calcSilan(start){
+localStorage.setItem("chem",JSON.stringify(arr));
+renderChemData();
+}
+
+/* ---------- СИЛАН ---------- */
+function setSilan(){
+let t=document.getElementById("silanTime").value;
+if(!t)return;
+
+let [h,m]=t.split(":").map(Number);
+let start=h*60+m;
+
 if(start<shiftStart) start+=1440;
 
 let arr=[];
-for(let i=0;i<20;i++){
-let t=start+i*180;
-if(t>shiftEnd) break;
-arr.push(fmt(t)+" — Приготовить силан");
-if(t+40<=shiftEnd){
-arr.push(fmt(t+40)+" — Зарядить силан");
-}
-}
-return arr.join("<br>");
+for(let i=0;i<10;i++){
+let base=start+i*180;
+if(base>shiftEnd) break;
+
+arr.push({time:fmt(base),text:"Приготовить силан"});
+arr.push({time:fmt(base+40),text:"Зарядить силан"});
 }
 
+localStorage.setItem("silan",JSON.stringify(arr));
+renderChemData();
+}
+
+/* ---------- ОБЕД (СТАБИЛЬНЫЙ) ---------- */
+function lunch(){
+
+let ev=[];
+
+(JSON.parse(localStorage.getItem("chem")||"[]"))
+.forEach(e=>ev.push({s:toMin(e.time),e:toMin(e.time)+20}));
+
+(JSON.parse(localStorage.getItem("silan")||"[]"))
+.forEach(e=>{
+let d=e.text.includes("Приготовить")?10:5;
+ev.push({s:toMin(e.time),e:toMin(e.time)+d});
+});
+
+ev.sort((a,b)=>a.s-b.s);
+
+let gaps=[];
+
+for(let i=0;i<ev.length-1;i++){
+let g=ev[i+1].s-ev[i].e;
+if(g>=50){
+gaps.push({s:ev[i].e,e:ev[i+1].s});
+}
+}
+
+if(!gaps.length) return "Нет времени на обед";
+
+return gaps.slice(0,3).map(x=>
+`${fmt(x.s)} — ${fmt(x.e)}`
+).join("\n");
+}
+
+/* ---------- ЗАДАЧИ ---------- */
+function loadTasks(){
+
+let t = JSON.parse(localStorage.getItem("tasks")||"null");
+
+if(!Array.isArray(t)){
+t=[
+{n:"Соль",d:false},
+{n:"Щелочь",d:false},
+{n:"Шлам",d:false}
+];
+localStorage.setItem("tasks",JSON.stringify(t));
+}
+
+document.getElementById("tasks").innerHTML=
+t.map((x,i)=>`
+<div class="task">
+<span>${x.n}</span>
+<label class="switch">
+<input type="checkbox" ${x.d?"checked":""} onchange="toggleTask(${i})">
+<span class="slider"></span>
+</label>
+</div>
+`).join("");
+}
+
+function addTask(){
+let v=document.getElementById("newTask").value;
+if(!v)return;
+
+let t=JSON.parse(localStorage.getItem("tasks")||"[]");
+t.push({n:v,d:false});
+
+localStorage.setItem("tasks",JSON.stringify(t));
+document.getElementById("newTask").value="";
+loadTasks();
+}
+
+function toggleTask(i){
+let t=JSON.parse(localStorage.getItem("tasks")||"[]");
+t[i].d=!t[i].d;
+localStorage.setItem("tasks",JSON.stringify(t));
+loadTasks();
+}
+
+/* ---------- РЕНДЕР ХИМИКА ---------- */
 function renderChem(){
 app.innerHTML=`
 <div class="card">
 <h3>Химия</h3>
-<input type="time" id="chem">
-<button onclick="showChem()">Рассчитать</button>
-<div id="chemRes"></div>
+<input type="time" id="chemTime">
+<button onclick="setChem()">Рассчитать</button>
+<div id="chemResult"></div>
 </div>
 
 <div class="card">
 <h3>Силан</h3>
-<input type="time" id="silan">
-<button onclick="showSilan()">Рассчитать</button>
-<div id="silanRes"></div>
+<input type="time" id="silanTime">
+<button onclick="setSilan()">Рассчитать</button>
+<div id="silanResult"></div>
 </div>
 
-<div class="card">
+<div class="card lunch">
 <h3>Возможное время для обеда</h3>
-<div id="lunch"></div>
+<div id="lunchResult"></div>
 </div>
 
 <div class="card">
 <h3>Задачи</h3>
 <div id="tasks"></div>
-<input id="taskInput">
-<button onclick="addTask()">Добавить</button>
+<input type="text" id="newTask" placeholder="Новая задача">
+<button onclick="addTask()">Добавить задачу</button>
 </div>
 
-<div class="card">
+<div class="card highlight">
 ВАЖНО: Готовить порошок и доливать серебро в течение всей смены! Следить за системой EnviroFalk и EnvoChem
 </div>
 
@@ -195,108 +340,160 @@ app.innerHTML=`
 </div>
 
 <div class="card">
-<button onclick="renderHome()">Новая смена</button>
+<button onclick="renderChemShift()">Новая смена</button>
 </div>
 `;
+
+renderChemData();
 loadTasks();
 }
 
-function showChem(){
-let v=document.getElementById("chem").value;
-if(!v)return;
-let [h,m]=v.split(":").map(Number);
-document.getElementById("chemRes").innerHTML=calcChem(h*60+m);
-}
+function renderChemData(){
+document.getElementById("chemResult").innerHTML=
+(JSON.parse(localStorage.getItem("chem")||"[]"))
+.map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
 
-function showSilan(){
-let v=document.getElementById("silan").value;
-if(!v)return;
-let [h,m]=v.split(":").map(Number);
-document.getElementById("silanRes").innerHTML=calcSilan(h*60+m);
-}
+document.getElementById("silanResult").innerHTML=
+(JSON.parse(localStorage.getItem("silan")||"[]"))
+.map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
 
-/* ---------- TASKS ---------- */
-
-function loadTasks(){
-let t=JSON.parse(localStorage.getItem("t")||"[]");
-document.getElementById("tasks").innerHTML=
-t.map((x,i)=>`
-<div class="task">
-<span>${x}</span>
-<button onclick="delTask(${i})">✔</button>
-</div>`).join("");
-}
-
-function addTask(){
-let v=document.getElementById("taskInput").value;
-let t=JSON.parse(localStorage.getItem("t")||"[]");
-t.push(v);
-localStorage.setItem("t",JSON.stringify(t));
-loadTasks();
-}
-
-function delTask(i){
-let t=JSON.parse(localStorage.getItem("t"));
-t.splice(i,1);
-localStorage.setItem("t",JSON.stringify(t));
-loadTasks();
+document.getElementById("lunchResult").innerText=lunch();
 }
 
 /* ---------- ОПЕРАТОР ---------- */
-
 function renderOperator(){
 app.innerHTML=`
-<div class="card"><h3>Задачи</h3><div id="tasks"></div><input id="taskInput"><button onclick="addTask()">Добавить</button></div>
-
 <div class="card">
-<button onclick="showMemo('robot')">Вывод робота в ручной режим</button>
-<button onclick="showMemo('load')">Загрузка</button>
-</div>`;
+<h3>Задачи</h3>
+<div id="tasks"></div>
+<input type="text" id="newTask" placeholder="Новая задача">
+<button onclick="addTask()">Добавить задачу</button>
+</div>
+
+<div class="card highlight">
+Выбрать режим “T1” > R > Аннулировать программу > Выбрать формат стекла / Готово
+</div>
+
+<div class="card highlight">
+на стопе должен быть прикреплен ярлык с информацией о количестве листов, номере смены, даты изготовления, с штампом ОТК
+не брать в работу стекло несоответствующего качества
+производить частичный отбор стекла, при этом стекло несоответствующего качества перерезать на оборудование загрузки
+</div>
+`;
+
 loadTasks();
 }
 
-function showMemo(type){
-let text={
-robot:"Выбрать режим T1 > R > Аннулировать программу > Выбрать формат стекла",
-load:"Проверить ярлык\nНе брать брак\nЧастичный отбор"
-};
-app.innerHTML=`
-<div class="card">${text[type]}</div>
-<button onclick="renderOperator()">Назад</button>`;
-}
-
 /* ---------- КРАСКА ---------- */
-
 function renderPaint(){
 app.innerHTML=`
-<div class="card"><h3>Задачи</h3><div id="tasks"></div><input id="taskInput"><button onclick="addTask()">Добавить</button></div>
-
 <div class="card">
-Миксер... (вся инструкция)
-</div>`;
+<h3>Задачи</h3>
+<div id="tasks"></div>
+<input type="text" id="newTask" placeholder="Новая задача">
+<button onclick="addTask()">Добавить задачу</button>
+</div>
+
+<div class="card highlight">
+Миксер на 2 часа на 25Гц
+Измерить вязкость, добавить ксилол
+Миксер на 1,5 часа на 20Гц
+Измерить вязкость, добавить ксилол
+Миксер на 1,5 часа на 20Гц
+Измерить вязкость, добавить ксилол
+Миксера 1,5 часа на 15Гц
+Измерить вязкость
+Миксер на 2 часа на 10Гц
+Вязкость должна быть 40-45
+</div>
+
+<div class="card highlight">
+Утренняя смена начинает готовить краску, дневная доготавливает, вечерняя разливает ксилол по канистрам
+</div>
+`;
+
 loadTasks();
 }
 
 /* ---------- ОБРАЗЦЫ ---------- */
-
 function renderSamples(){
-app.innerHTML=`<div class="card"><img src="k3.png"></div>`;
+app.innerHTML=`<div class="card"><img src="k3.jpg"></div>`;
 }
 
 /* ---------- ЛИНИЯ ---------- */
-
 function renderLine(){
 app.innerHTML=`
-<div class="card"><img src="k1.png"></div>
+<div class="card"><img src="k1.jpg"></div>
 
-<div class="card">
-<div class="sectionTitle">Секция предварительной мойки</div>
-<div class="sectionText">Роликовая щетка и промывочная вода</div>
-</div>`;
+<div class="card highlight">
+Секция предварительной мойки
+Роликовая щетка и промывочная вода
+
+Секция полировки и промывки
+Полировочные щетки на транспортных рамах, смоченные полировочной суспензией
+
+Секция моечной машины
+Три моечные камеры, в первой щетки снизу и сверху, в остальных сверху
+
+Секция сенсибилизации
+Сенсибилизатор для обеспечения сцепления серебра с поверхностью стекла
+
+Секция активации
+Раствор палладия формирует центры кристаллизации осаждаемого серебра. Так же обработка раствором палладия повышает антикоррозионные свойства зеркала
+
+Секция серебрения
+Раствор серебра и восстановителя распыляются с помощью подвижной траверсы
+
+Секция пассивации
+Раствор пассиватора на основе дихлорида олова прекращает химическую реакцию серебряного зеркала и защищает серебряный слой от негативного воздействии компонентов ЛКП
+
+Секция распыления раствора силана 
+Силан служит для создания адгезии ЛКП к металлическим слоям
+
+Секция обдувки
+С помощью вентилятора высокого давления производится обдув для удаления воды с поверхности стекла
+
+Секция сушки
+77°С
+
+Секция охлаждения
+50°С
+
+Мост 
+Визуальный осмотр качества зеркала
+
+Секция нанесения базового слоя ЛКП
+
+Секция сушки
+60-110-110 (печь не более 150°С)
+
+Секция охлаждения 
+50°С
+
+Секция нанесения верхнего слоя ЛКП
+
+Секция сушки
+60-125-170-175-155 (печь не более 200°С)
+
+Секция охлаждения
+35°С
+
+Секция водяного охлаждения
+Разбрызгивается вода, охлаждая лист до температуры окружающий среды
+
+Секция окончательной мойки
+Очистка нижней стороны от химических загрязнений с помощью хлорида железа
+Далее зеркало перемещается в моечную машину, щетки снизу.
+После окончательной мойки с помощью специальных воздушных ножей с поверхности удаляются остатки воды
+
+Отчистные
+Сточные воды серебра и палладия очищаются в отдельных блоках очистки путем многослойной фильтрации
+Сточные воды, загрязненные соединениями олова и железа, очищаются путем коагуляции, нейтрализации, флокуляции воды
+</div>
+`;
 }
 
 /* ---------- START ---------- */
-
 renderHome();
 
 </script>
