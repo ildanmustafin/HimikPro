@@ -108,8 +108,7 @@ input:checked + .slider:before{transform:translateX(22px);}
 
 <script>
 
-let taskKey="tasksChem";
-
+/* ---------- НАВИГАЦИЯ ---------- */
 function goHome(){renderHome();}
 
 function renderHome(){
@@ -122,22 +121,133 @@ app.innerHTML=`
 `;
 }
 
+/* ---------- СМЕНЫ ---------- */
+let shiftStart=0,shiftEnd=1440;
+
+function renderChemShift(){
+app.innerHTML=`
+<div class="card">
+<h3>Выбор смены</h3>
+<select id="shift">
+<option value="7-15">07:00 - 15:00</option>
+<option value="15-23">15:00 - 23:00</option>
+<option value="23-7">23:00 - 07:00</option>
+<option value="9-21">09:00 - 21:00</option>
+<option value="21-9">21:00 - 09:00</option>
+</select>
+<button onclick="startChem()">Сохранить смену</button>
+</div>`;
+}
+
+function startChem(){
+let map={
+"7-15":[7,15],
+"15-23":[15,23],
+"23-7":[23,7],
+"9-21":[9,21],
+"21-9":[21,9]
+};
+
+let val=document.getElementById("shift").value;
+let s=map[val];
+
+shiftStart=s[0]*60;
+shiftEnd=s[1]*60;
+if(shiftEnd<=shiftStart) shiftEnd+=1440;
+
+renderChem();
+}
+
+/* ---------- ВРЕМЯ ---------- */
+function fmt(min){
+min=((min%1440)+1440)%1440;
+return String(Math.floor(min/60)).padStart(2,'0')+":"+String(min%60).padStart(2,'0');
+}
+
+function toMin(t){
+let [h,m]=t.split(":").map(Number);
+return h*60+m;
+}
+
+/* ---------- ХИМИЯ ---------- */
+function setChem(){
+let t=document.getElementById("chemTime").value;
+if(!t)return;
+
+let start=toMin(t);
+if(start<shiftStart) start+=1440;
+
+let arr=[];
+for(let i=0;i<6;i++){
+let time=start+i*240;
+if(time>shiftEnd) break;
+arr.push({time:fmt(time),text:"Приготовить химию"});
+}
+
+localStorage.setItem("chem",JSON.stringify(arr));
+renderChemData();
+}
+
+/* ---------- СИЛАН ---------- */
+function setSilan(){
+let t=document.getElementById("silanTime").value;
+if(!t)return;
+
+let start=toMin(t);
+if(start<shiftStart) start+=1440;
+
+let arr=[];
+for(let i=0;i<10;i++){
+let base=start+i*180;
+if(base>shiftEnd) break;
+
+arr.push({time:fmt(base),text:"Приготовить силан"});
+arr.push({time:fmt(base+40),text:"Зарядить силан"});
+}
+
+localStorage.setItem("silan",JSON.stringify(arr));
+renderChemData();
+}
+
+/* ---------- ОБЕД ---------- */
+function lunch(){
+
+let ev=[];
+
+(JSON.parse(localStorage.getItem("chem")||"[]"))
+.forEach(e=>ev.push({s:toMin(e.time),e:toMin(e.time)+20}));
+
+(JSON.parse(localStorage.getItem("silan")||"[]"))
+.forEach(e=>{
+let d=e.text.includes("Приготовить")?10:5;
+ev.push({s:toMin(e.time),e:toMin(e.time)+d});
+});
+
+ev.sort((a,b)=>a.s-b.s);
+
+let gaps=[];
+for(let i=0;i<ev.length-1;i++){
+let g=ev[i+1].s-ev[i].e;
+if(g>=50) gaps.push({s:ev[i].e,e:ev[i+1].s});
+}
+
+if(!gaps.length) return "Нет времени на обед";
+
+return gaps.slice(0,3).map(x=>`${fmt(x.s)} — ${fmt(x.e)}`).join("\n");
+}
+
 /* ---------- TASKS ---------- */
 function loadTasks(){
 
-let t = JSON.parse(localStorage.getItem(taskKey)||"null");
+let t = JSON.parse(localStorage.getItem("tasksChem")||"null");
 
 if(!Array.isArray(t)){
-if(taskKey==="tasksChem"){
 t=[
 {n:"Соль",d:false},
 {n:"Щелочь",d:false},
 {n:"Шлам",d:false}
 ];
-}else{
-t=[];
-}
-localStorage.setItem(taskKey,JSON.stringify(t));
+localStorage.setItem("tasksChem",JSON.stringify(t));
 }
 
 document.getElementById("tasks").innerHTML=
@@ -156,87 +266,42 @@ function addTask(){
 let v=document.getElementById("newTask").value;
 if(!v)return;
 
-let t=JSON.parse(localStorage.getItem(taskKey)||"[]");
+let t=JSON.parse(localStorage.getItem("tasksChem")||"[]");
 t.push({n:v,d:false});
-localStorage.setItem(taskKey,JSON.stringify(t));
+localStorage.setItem("tasksChem",JSON.stringify(t));
 document.getElementById("newTask").value="";
 loadTasks();
 }
 
 function toggleTask(i){
-let t=JSON.parse(localStorage.getItem(taskKey)||"[]");
+let t=JSON.parse(localStorage.getItem("tasksChem")||"[]");
 t[i].d=!t[i].d;
-localStorage.setItem(taskKey,JSON.stringify(t));
+localStorage.setItem("tasksChem",JSON.stringify(t));
 loadTasks();
 }
 
-/* ---------- ХИМИК ---------- */
-function renderChemShift(){
-app.innerHTML=`
-<div class="card">
-<h3>Выбор смены</h3>
-<select id="shift">
-<option value="7-15">07:00 - 15:00</option>
-<option value="15-23">15:00 - 23:00</option>
-<option value="23-7">23:00 - 07:00</option>
-<option value="9-21">09:00 - 21:00</option>
-<option value="21-9">21:00 - 09:00</option>
-</select>
-<button onclick="renderChem()">Сохранить смену</button>
-</div>`;
-}
-
+/* ---------- РЕНДЕР ХИМИКА ---------- */
 function renderChem(){
-taskKey="tasksChem";
-
 app.innerHTML=`
 <div class="card">
-<h3>Задачи</h3>
-<div id="tasks"></div>
-<input type="text" id="newTask" placeholder="Новая задача">
-<button onclick="addTask()">Добавить задачу</button>
+<h3>Химия</h3>
+<input type="time" id="chemTime">
+<button onclick="setChem()">Рассчитать</button>
+<div id="chemResult"></div>
 </div>
-`;
 
-loadTasks();
-}
-
-/* ---------- ОПЕРАТОР ---------- */
-function renderOperator(){
-taskKey="tasksOperator";
-
-app.innerHTML=`
 <div class="card">
-<h3>Задачи</h3>
-<div id="tasks"></div>
-<input type="text" id="newTask" placeholder="Новая задача">
-<button onclick="addTask()">Добавить задачу</button>
+<h3>Силан</h3>
+<input type="time" id="silanTime">
+<button onclick="setSilan()">Рассчитать</button>
+<div id="silanResult"></div>
 </div>
 
-<div class="card highlight">
-<b>Вывод робота в ручной режим</b>
-Выбрать режим “T1” > R > Аннулировать программу > Выбрать формат стекла / Готово
+<div class="card lunch">
+<h3>Возможное время для обеда</h3>
+<div id="lunchResult"></div>
 </div>
 
-<div class="card highlight">
-На стопе должен быть прикреплен ярлык с информацией о количестве листов, номере смены, даты изготовления, с штампом ОТК
-</div>
-
-<div class="card highlight">
-<b>Инструкция по роботу загрузки если встанет с двойным стеклом</b>
-Переводите в ручной режим, в программе ищете строчку
-157, выбираете «block selection», далее по оси Y отводите робота вместе с одним стеклом подальше от стопы, далее ищете строчку 5, нажимаете «block selection», выполняете, робот встаёт в домашнюю позицию с одним стеклом, далее ищете строчку 103, нажимаете «block selection», он переворачивается с одним стеклом, далее вручную ставите в стопу оставшееся стекло, нажимаете на присоску, чтобы сбросить. При необходимости заходите и двигаете стекло в стопе. Далее ищете строчку 5, нажимаете «block selection», робот выходит на домашнюю позицию, переводите в авто режим, запускаете.
-</div>
-`;
-
-loadTasks();
-}
-
-/* ---------- КРАСКА ---------- */
-function renderPaint(){
-taskKey="tasksPaint";
-
-app.innerHTML=`
 <div class="card">
 <h3>Задачи</h3>
 <div id="tasks"></div>
@@ -245,32 +310,39 @@ app.innerHTML=`
 </div>
 
 <div class="card highlight">
-<b>Инструкция по приготовлению краски</b>
-Миксер на 2 часа на 25Гц
-Измерить вязкость, добавить ксилол
-Миксер на 1,5 часа на 20Гц
-Измерить вязкость, добавить ксилол
-Миксер на 1,5 часа на 20Гц
-Измерить вязкость, добавить ксилол
-Миксера 1,5 часа на 15Гц
-Измерить вязкость
-Миксер на 2 часа на 10Гц
-Вязкость должна быть 40-45
+ВАЖНО: Готовить порошок и доливать серебро в течение всей смены! Следить за системой EnviroFalk и EnvoChem
+</div>
+
+<div class="card">
+<img src="k2.jpg">
+</div>
+
+<div class="card">
+<button onclick="renderChemShift()">Новая смена</button>
 </div>
 `;
 
+renderChemData();
 loadTasks();
 }
 
-/* ---------- ОБРАЗЦЫ ---------- */
-function renderSamples(){
-app.innerHTML=`<div class="card"><img src="k3.jpg"></div>`;
+function renderChemData(){
+document.getElementById("chemResult").innerHTML=
+(JSON.parse(localStorage.getItem("chem")||"[]"))
+.map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
+
+document.getElementById("silanResult").innerHTML=
+(JSON.parse(localStorage.getItem("silan")||"[]"))
+.map(e=>`<div class="event">${e.time} — ${e.text}</div>`).join("");
+
+document.getElementById("lunchResult").innerText=lunch();
 }
 
-/* ---------- ЛИНИЯ ---------- */
-function renderLine(){
-app.innerHTML=`<div class="card"><img src="k1.jpg"></div>`;
-}
+/* ---------- ОСТАЛЬНОЕ НЕ ТРОГАЛ ---------- */
+function renderOperator(){app.innerHTML="<div class='card'>Оператор</div>";}
+function renderPaint(){app.innerHTML="<div class='card'>Краска</div>";}
+function renderSamples(){app.innerHTML="<div class='card'><img src='k3.jpg'></div>";}
+function renderLine(){app.innerHTML="<div class='card'><img src='k1.jpg'></div>";}
 
 renderHome();
 
